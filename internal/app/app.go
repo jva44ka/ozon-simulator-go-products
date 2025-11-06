@@ -5,15 +5,15 @@ import (
 	"net"
 	"net/http"
 
-	"github.com/jva44ka/ozon-simulator-go/internal/app/handlers/get_product_by_sku_handler"
-	"github.com/jva44ka/ozon-simulator-go/internal/domain/repository"
-	"github.com/jva44ka/ozon-simulator-go/internal/domain/service"
-	"github.com/jva44ka/ozon-simulator-go/internal/infra/config"
-	"github.com/jva44ka/ozon-simulator-go/internal/infra/http/middlewares"
-	"github.com/jva44ka/ozon-simulator-go/internal/infra/http/round_trippers"
-
-	_ "github.com/jva44ka/ozon-simulator-go/docs"
+	_ "github.com/jva44ka/ozon-simulator-go-products/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
+
+	"github.com/jva44ka/ozon-simulator-go-products/internal/app/handlers/get_product_by_sku_handler"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/repository"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/service"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/config"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/http/middlewares"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/http/round_trippers"
 )
 
 type App struct {
@@ -47,7 +47,7 @@ func (app *App) ListenAndServe() error {
 	return app.server.Serve(l)
 }
 
-func boostrapHandler(config *config.Config) http.Handler {
+func boostrapHandler(_ *config.Config) http.Handler {
 	tr := http.DefaultTransport
 	tr = round_trippers.NewTimerRoundTipper(tr)
 
@@ -56,7 +56,7 @@ func boostrapHandler(config *config.Config) http.Handler {
 
 	mx := http.NewServeMux()
 	mx.Handle("GET /products/{sku}", get_product_by_sku_handler.NewGetProductsBySkuHandler(productService))
-	mx.Handle("/swagger/*", httpSwagger.WrapHandler)
+	mx.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	middleware := middlewares.NewTimerMiddleware(mx)
 

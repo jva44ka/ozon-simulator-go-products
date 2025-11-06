@@ -5,7 +5,7 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"github.com/jva44ka/ozon-simulator-go/internal/domain/model"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/model"
 )
 
 type InMemoryProductRepository struct {

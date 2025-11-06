@@ -1,4 +1,4 @@
-module github.com/jva44ka/ozon-simulator-go
+module github.com/jva44ka/ozon-simulator-go-products
 
 go 1.24.0
 

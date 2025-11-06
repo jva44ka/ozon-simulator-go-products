@@ -1,11 +1,11 @@
-//go:generate swag init -g ./main.go -o ./docs
+//go:generate swag init -g cmd/server/main.go --dir ./internal,./cmd
 package main
 
 import (
 	"fmt"
 	"os"
 
-	app2 "github.com/jva44ka/ozon-simulator-go/internal/app"
+	app2 "github.com/jva44ka/ozon-simulator-go-products/internal/app"
 )
 
 func main() {

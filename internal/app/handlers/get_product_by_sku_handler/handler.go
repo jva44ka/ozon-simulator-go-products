@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/jva44ka/ozon-simulator-go/internal/domain/model"
-	httpPkg "github.com/jva44ka/ozon-simulator-go/pkg/http"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/model"
+	httpPkg "github.com/jva44ka/ozon-simulator-go-products/pkg/http"
 )
 
 type ProductService interface {
@@ -23,11 +23,20 @@ func NewGetProductsBySkuHandler(ProductService ProductService) *GetProductsBySku
 	return &GetProductsBySkuHandler{ProductService: ProductService}
 }
 
+// @Summary      Get product by SKU
+// @Description  Возвращает товар по SKU
+// @Tags         products
+// @Accept       json
+// @Produce      json
+// @Param        sku  path  int  true  "SKU товара"
+// @Success      200  {object}  GetProductsResponse
+// @Failure      404  {object}  http.ErrorResponse
+// @Router       /products/{sku} [get]
 func (h GetProductsBySkuHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	skuRaw := r.PathValue("sku")
 	sku, err := strconv.Atoi(skuRaw)
 	if err != nil {
-		if err = httpPkg.ErrorResponse(w, http.StatusBadRequest, "sku must be more than zero"); err != nil {
+		if err = httpPkg.NewErrorResponse(w, http.StatusBadRequest, "sku must be more than zero"); err != nil {
 			fmt.Println("json.Encode failed ", err)
 
 			return
@@ -37,7 +46,7 @@ func (h GetProductsBySkuHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 	}
 
 	if sku < 1 {
-		if err = httpPkg.ErrorResponse(w, http.StatusBadRequest, "sku must be more than zero"); err != nil {
+		if err = httpPkg.NewErrorResponse(w, http.StatusBadRequest, "sku must be more than zero"); err != nil {
 			fmt.Println("json.Encode failed ", err)
 
 			return
@@ -48,7 +57,7 @@ func (h GetProductsBySkuHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	Product, err := h.ProductService.GetProductBySku(r.Context(), uint64(sku))
 	if err != nil {
-		if err = httpPkg.ErrorResponse(w, http.StatusInternalServerError, err.Error()); err != nil {
+		if err = httpPkg.NewErrorResponse(w, http.StatusInternalServerError, err.Error()); err != nil {
 
 			return
 		}
