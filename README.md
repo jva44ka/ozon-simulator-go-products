@@ -18,11 +18,6 @@ GET localhost:8080/products/1
 }
 ```
 
-# Clean Arch
-![](docs/clean_arch.png)
-
-![](docs/clean-arch-impl.png)
-
 # Полезные ссылки
 
 + Effective Go - https://go.dev/doc/effective_go
