@@ -2,9 +2,8 @@ server:
   host: localhost
   port: 8080
 
-
 products:
   schema: http
   host: localhost
-  port: 8082
+  port: 5082
   token: testToken
