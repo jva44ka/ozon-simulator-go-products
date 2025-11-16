@@ -55,7 +55,7 @@ func boostrapHandler(_ *config.Config) http.Handler {
 	productService := service.NewProductService(productRepository)
 
 	mx := http.NewServeMux()
-	mx.Handle("GET /products/{sku}", get_product_by_sku_handler.NewGetProductsBySkuHandler(productService))
+	mx.Handle("GET /product/{sku}", get_product_by_sku_handler.NewGetProductsBySkuHandler(productService))
 	mx.Handle("/swagger/", httpSwagger.WrapHandler)
 
 	middleware := middlewares.NewTimerMiddleware(mx)
