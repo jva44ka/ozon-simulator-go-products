@@ -26,9 +26,9 @@ type ProductRow struct {
 
 func (r *PgxRepository) GetProductBySku(ctx context.Context, sku uint64) (*model.Product, error) {
 	const query = `
-select * 
-from products 
-where sku = $1;`
+SELECT * 
+FROM products 
+WHERE sku = $1;`
 
 	row := r.pool.QueryRow(ctx, query, int64(sku))
 
