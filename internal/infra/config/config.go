@@ -1,8 +1,9 @@
 package config
 
 import (
-	"gopkg.in/yaml.v3"
 	"os"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Config struct {
@@ -17,6 +18,14 @@ type Config struct {
 		Token  string `yaml:"token"`
 		Schema string `yaml:"schema"`
 	} `yaml:"products"`
+
+	Database struct {
+		User     string `yaml:"user"`
+		Password string `yaml:"password"`
+		Host     string `yaml:"host"`
+		Port     string `yaml:"port"`
+		Name     string `yaml:"name"`
+	}
 }
 
 func LoadConfig(filename string) (*Config, error) {
