@@ -1,3 +1,5 @@
+-- +goose Up
+-- +goose StatementBegin
 INSERT INTO
     products (sku, price, name)
 VALUES
@@ -234,3 +236,9 @@ VALUES
     (213, 990.0, 'Лазерная указка красная'),
     (214, 450.0, 'Лупа х2 большая'),
     (215, 499.0, 'Брелок металлический ''OZON''');
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+TRUNCATE TABLE products;
+-- +goose StatementEnd
