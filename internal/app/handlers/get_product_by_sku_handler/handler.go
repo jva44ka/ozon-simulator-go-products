@@ -30,7 +30,7 @@ func NewGetProductsBySkuHandler(ProductService ProductService) *GetProductsBySku
 // @Produce      json
 // @Param        sku  path  int  true  "SKU товара"
 // @Success      200  {object}  GetProductsResponse
-// @Failure      404  {object}  http.ErrorResponse
+// @Failure      404  {object}  httpPkg.ErrorResponse
 // @Router       /product/{sku} [get]
 func (h GetProductsBySkuHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	skuRaw := r.PathValue("sku")
