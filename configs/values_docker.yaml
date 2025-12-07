@@ -2,8 +2,9 @@ server:
   host:
   port: 8000
 
-products:
-  schema: http
-  host: products
-  port: 8082
-  token: testToken
+database:
+  user: postgres
+  password: 1234
+  host: localhost
+  port: 5432
+  name: ozon_simulator_go_products

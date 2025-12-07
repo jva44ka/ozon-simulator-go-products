@@ -1,10 +1,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jva44ka/ozon-simulator-go-products/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
 
@@ -31,7 +33,10 @@ func NewApp(configPath string) (*App, error) {
 		config: configImpl,
 	}
 
-	app.server.Handler = boostrapHandler(configImpl)
+	app.server.Handler, err = boostrapHandler(configImpl)
+	if err != nil {
+		return nil, fmt.Errorf("boostrapHandler: %w", err)
+	}
 
 	return app, nil
 }
@@ -47,11 +52,23 @@ func (app *App) ListenAndServe() error {
 	return app.server.Serve(l)
 }
 
-func boostrapHandler(_ *config.Config) http.Handler {
+func boostrapHandler(cfg *config.Config) (http.Handler, error) {
 	tr := http.DefaultTransport
 	tr = round_trippers.NewTimerRoundTipper(tr)
 
-	productRepository := repository.NewProductRepository(100)
+	pool, err := pgxpool.New(context.Background(), fmt.Sprintf(
+		"postgres://%s:%s@%s:%s/%s",
+		cfg.Database.User,
+		cfg.Database.Password,
+		cfg.Database.Host,
+		cfg.Database.Port,
+		cfg.Database.Name,
+	))
+	if err != nil {
+		return nil, fmt.Errorf("pgxpool.New: %w", err)
+	}
+
+	productRepository := repository.NewPgxRepository(pool)
 	productService := service.NewProductService(productRepository)
 
 	mx := http.NewServeMux()
@@ -60,5 +77,5 @@ func boostrapHandler(_ *config.Config) http.Handler {
 
 	middleware := middlewares.NewTimerMiddleware(mx)
 
-	return middleware
+	return middleware, nil
 }
