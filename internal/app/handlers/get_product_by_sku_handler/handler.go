@@ -40,8 +40,12 @@ func (h GetProductsBySkuHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 
 	product, err := h.ProductService.GetProductBySku(r.Context(), uint64(sku))
 	if err != nil {
-		httpPkg.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
+		if errors.Is(err, model.ErrProductNotFound) {
+			httpPkg.WriteErrorResponse(w, http.StatusNotFound, "Product not found")
+			return
+		}
 
+		httpPkg.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 		return
 	}
 
