@@ -2,13 +2,12 @@ package get_product_by_sku_handler
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"errors"
 	"net/http"
 	"strconv"
 
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/model"
-	httpPkg "github.com/jva44ka/ozon-simulator-go-products/pkg/http"
+	httpPkg "github.com/jva44ka/ozon-simulator-go-products/pkg/http/json"
 )
 
 type ProductService interface {
@@ -33,50 +32,40 @@ func NewGetProductsBySkuHandler(ProductService ProductService) *GetProductsBySku
 // @Failure      404  {object}  httpPkg.ErrorResponse
 // @Router       /product/{sku} [get]
 func (h GetProductsBySkuHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	skuRaw := r.PathValue("sku")
-	sku, err := strconv.Atoi(skuRaw)
+	sku, err := parseSku(r)
 	if err != nil {
-		if err = httpPkg.NewErrorResponse(w, http.StatusBadRequest, "sku must be more than zero"); err != nil {
-			fmt.Println("json.Encode failed ", err)
-
-			return
-		}
-
+		httpPkg.WriteErrorResponse(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if sku < 1 {
-		if err = httpPkg.NewErrorResponse(w, http.StatusBadRequest, "sku must be more than zero"); err != nil {
-			fmt.Println("json.Encode failed ", err)
-
-			return
-		}
-
-		return
-	}
-
-	Product, err := h.ProductService.GetProductBySku(r.Context(), uint64(sku))
+	product, err := h.ProductService.GetProductBySku(r.Context(), uint64(sku))
 	if err != nil {
-		if err = httpPkg.NewErrorResponse(w, http.StatusInternalServerError, err.Error()); err != nil {
-
-			return
-		}
+		httpPkg.WriteErrorResponse(w, http.StatusInternalServerError, err.Error())
 
 		return
 	}
 
 	response := GetProductsResponse{
 		Product: GetProductProductResponse{
-			Sku:   Product.Sku,
-			Name:  Product.Name,
-			Price: Product.Price,
+			Sku:   product.Sku,
+			Name:  product.Name,
+			Price: product.Price,
 		}}
 
-	w.Header().Add("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(&response); err != nil {
-		fmt.Println("success status failed")
-		return
+	httpPkg.WriteSuccessResponse(w, response)
+	return
+}
+
+func parseSku(r *http.Request) (int, error) {
+	skuRaw := r.PathValue("sku")
+	sku, err := strconv.Atoi(skuRaw)
+	if err != nil {
+		return 0, errors.New("sku must be a number")
 	}
 
-	return
+	if sku < 1 {
+		return 0, errors.New("sku must be more than zero")
+	}
+
+	return sku, nil
 }
