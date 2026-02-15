@@ -7,7 +7,9 @@ import (
 )
 
 func WriteSuccessResponse(w http.ResponseWriter, response any) {
+	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "application/json")
+	
 	if err := json.NewEncoder(w).Encode(&response); err != nil {
 		fmt.Println("json.Encode failed")
 	}
