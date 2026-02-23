@@ -22,7 +22,7 @@ type ProductRow struct {
 	sku   int64
 	price float64
 	name  string
-	count int16
+	count uint32
 }
 
 func (r *PgxRepository) GetProductBySku(ctx context.Context, sku uint64) (*model.Product, error) {

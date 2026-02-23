@@ -1,7 +1,7 @@
 -- +goose Up
 -- +goose StatementBegin
 ALTER TABLE products
-    ADD COLUMN count SMALLINT NOT NULL DEFAULT 10;
+    ADD COLUMN count INT NOT NULL DEFAULT 10;
 -- +goose StatementEnd
 
 -- +goose Down
