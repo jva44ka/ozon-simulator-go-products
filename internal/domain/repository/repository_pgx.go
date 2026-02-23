@@ -22,11 +22,12 @@ type ProductRow struct {
 	sku   int64
 	price float64
 	name  string
+	count int16
 }
 
 func (r *PgxRepository) GetProductBySku(ctx context.Context, sku uint64) (*model.Product, error) {
 	const query = `
-SELECT * 
+SELECT sku, price, name, count 
 FROM products 
 WHERE sku = $1;`
 
@@ -34,7 +35,7 @@ WHERE sku = $1;`
 
 	var productRow = ProductRow{}
 
-	err := row.Scan(&productRow.sku, &productRow.price, &productRow.name)
+	err := row.Scan(&productRow.sku, &productRow.price, &productRow.name, &productRow.count)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, model.ErrProductNotFound
@@ -47,6 +48,7 @@ WHERE sku = $1;`
 		Sku:   uint64(productRow.sku),
 		Price: productRow.price,
 		Name:  productRow.name,
+		Count: productRow.count,
 	}
 
 	return result, nil

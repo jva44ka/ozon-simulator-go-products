@@ -3,7 +3,6 @@
 LOCAL_BIN:=$(CURDIR)/bin
 MIGRATION_NAME ?= init.sql
 
-
 install-goose:
 	$(info Installing goose binary into [$(LOCAL_BIN)]...)
 	GOBIN=$(LOCAL_BIN) go install github.com/pressly/goose/v3/cmd/goose@v3.24.1

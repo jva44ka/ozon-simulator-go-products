@@ -54,6 +54,7 @@ func (h GetProductsBySkuHandler) ServeHTTP(w http.ResponseWriter, r *http.Reques
 			Sku:   product.Sku,
 			Name:  product.Name,
 			Price: product.Price,
+			Count: product.Count,
 		}}
 
 	httpPkg.WriteSuccessResponse(w, response)
