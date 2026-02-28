@@ -8,6 +8,11 @@ import (
 	app2 "github.com/jva44ka/ozon-simulator-go-products/internal/app"
 )
 
+const (
+	grpcPort = ":50051"
+	httpPort = ":8081"
+)
+
 func main() {
 	fmt.Println("app starting")
 

@@ -6,6 +6,7 @@ option go_package = "ozon-simulator-go-products/api/proto;products";
 
 service ProductsService {
   rpc GetProduct (GetProductRequest) returns (GetProductResponse);
+  rpc IncreaseStock (IncreaseStockRequest) returns (IncreaseStockResponse);
   rpc DecreaseStock (DecreaseStockRequest) returns (DecreaseStockResponse);
 }
 
@@ -20,15 +21,46 @@ message GetProductResponse {
   uint64 price = 4;
 }
 
-message DecreaseStockRequest {
-  repeated DecreaseStockBatch stocks = 1;
+message IncreaseStockRequest {
+  repeated IncreaseStockBatch stocks = 1;
 
-  message DecreaseStockBatch {
+  message IncreaseStockBatch {
+    uint64 sku = 1;
+    uint32 count = 2;
+  }
+}
+
+message IncreaseStockResponse {
+  oneof result {
+      Success success = 1;
+      Error error = 2;
+  }
+
+  message Success { }
+
+  message Error {
+    string message = 1;
+  }
+}
+
+message DecreaseStockRequest {
+  repeated IncreaseStockBatch stocks = 1;
+
+  message IncreaseStockBatch {
     uint64 sku = 1;
     uint32 count = 2;
   }
 }
 
 message DecreaseStockResponse {
-  bool success = 1;
+  oneof result {
+    Success success = 1;
+    Error error = 2;
+  }
+
+  message Success { }
+
+  message Error {
+    string message = 1;
+  }
 }
