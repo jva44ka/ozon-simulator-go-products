@@ -32,3 +32,14 @@ generate-swagger-bin:
 
 generate-swagger:
 	swag init -g cmd/server/main.go -o docs --parseDependency --parseInternal
+
+proto-generate:
+	protoc \
+      -I . \
+      -I C:/Git/googleapis \
+      -I C:/Git/grpc-gateway \
+      -I C:/Git/protoc/include \
+      --go_out=./pkg/proto \
+      --go-grpc_out=./pkg/proto \
+      --grpc-gateway_out=./pkg/proto \
+      api/products.proto
