@@ -11,8 +11,8 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/app/"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/middleware"
-	desc "github.com/jva44ka/ozon-simulator-go-products/internal/pkg/api/notes/v1"
+	desc "github.com/jva44ka/ozon-simulator-go-products/internal/app/gen/ozon-simulator-go-products/api/proto"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/app/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"

@@ -35,7 +35,7 @@ var (
 	_ = metadata.Join
 )
 
-func request_ProductsService_GetProduct_0(ctx context.Context, marshaler runtime.Marshaler, client ProductsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Products_GetProduct_0(ctx context.Context, marshaler runtime.Marshaler, client ProductsClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetProductRequest
 		metadata runtime.ServerMetadata
@@ -56,7 +56,7 @@ func request_ProductsService_GetProduct_0(ctx context.Context, marshaler runtime
 	return msg, metadata, err
 }
 
-func local_request_ProductsService_GetProduct_0(ctx context.Context, marshaler runtime.Marshaler, server ProductsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Products_GetProduct_0(ctx context.Context, marshaler runtime.Marshaler, server ProductsServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq GetProductRequest
 		metadata runtime.ServerMetadata
@@ -74,7 +74,7 @@ func local_request_ProductsService_GetProduct_0(ctx context.Context, marshaler r
 	return msg, metadata, err
 }
 
-func request_ProductsService_IncreaseStock_0(ctx context.Context, marshaler runtime.Marshaler, client ProductsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Products_IncreaseStock_0(ctx context.Context, marshaler runtime.Marshaler, client ProductsClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq IncreaseStockRequest
 		metadata runtime.ServerMetadata
@@ -89,7 +89,7 @@ func request_ProductsService_IncreaseStock_0(ctx context.Context, marshaler runt
 	return msg, metadata, err
 }
 
-func local_request_ProductsService_IncreaseStock_0(ctx context.Context, marshaler runtime.Marshaler, server ProductsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Products_IncreaseStock_0(ctx context.Context, marshaler runtime.Marshaler, server ProductsServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq IncreaseStockRequest
 		metadata runtime.ServerMetadata
@@ -101,7 +101,7 @@ func local_request_ProductsService_IncreaseStock_0(ctx context.Context, marshale
 	return msg, metadata, err
 }
 
-func request_ProductsService_DecreaseStock_0(ctx context.Context, marshaler runtime.Marshaler, client ProductsServiceClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func request_Products_DecreaseStock_0(ctx context.Context, marshaler runtime.Marshaler, client ProductsClient, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq DecreaseStockRequest
 		metadata runtime.ServerMetadata
@@ -116,7 +116,7 @@ func request_ProductsService_DecreaseStock_0(ctx context.Context, marshaler runt
 	return msg, metadata, err
 }
 
-func local_request_ProductsService_DecreaseStock_0(ctx context.Context, marshaler runtime.Marshaler, server ProductsServiceServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
+func local_request_Products_DecreaseStock_0(ctx context.Context, marshaler runtime.Marshaler, server ProductsServer, req *http.Request, pathParams map[string]string) (proto.Message, runtime.ServerMetadata, error) {
 	var (
 		protoReq DecreaseStockRequest
 		metadata runtime.ServerMetadata
@@ -128,79 +128,79 @@ func local_request_ProductsService_DecreaseStock_0(ctx context.Context, marshale
 	return msg, metadata, err
 }
 
-// RegisterProductsServiceHandlerServer registers the http handlers for service ProductsService to "mux".
-// UnaryRPC     :call ProductsServiceServer directly.
+// RegisterProductsHandlerServer registers the http handlers for service Products to "mux".
+// UnaryRPC     :call ProductsServer directly.
 // StreamingRPC :currently unsupported pending https://github.com/grpc/grpc-go/issues/906.
-// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterProductsServiceHandlerFromEndpoint instead.
+// Note that using this registration option will cause many gRPC library features to stop working. Consider using RegisterProductsHandlerFromEndpoint instead.
 // GRPC interceptors will not work for this type of registration. To use interceptors, you must use the "runtime.WithMiddlewares" option in the "runtime.NewServeMux" call.
-func RegisterProductsServiceHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ProductsServiceServer) error {
-	mux.Handle(http.MethodGet, pattern_ProductsService_GetProduct_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+func RegisterProductsHandlerServer(ctx context.Context, mux *runtime.ServeMux, server ProductsServer) error {
+	mux.Handle(http.MethodGet, pattern_Products_GetProduct_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/products.ProductsService/GetProduct", runtime.WithHTTPPathPattern("/v1/products/{sku}"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/products.Products/GetProduct", runtime.WithHTTPPathPattern("/v1/products/{sku}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ProductsService_GetProduct_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Products_GetProduct_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_ProductsService_GetProduct_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Products_GetProduct_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_ProductsService_IncreaseStock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_Products_IncreaseStock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/products.ProductsService/IncreaseStock", runtime.WithHTTPPathPattern("/v1/products/increase-stock"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/products.Products/IncreaseStock", runtime.WithHTTPPathPattern("/v1/products/increase-stock"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ProductsService_IncreaseStock_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Products_IncreaseStock_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_ProductsService_IncreaseStock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Products_IncreaseStock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_ProductsService_DecreaseStock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_Products_DecreaseStock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		var stream runtime.ServerTransportStream
 		ctx = grpc.NewContextWithServerTransportStream(ctx, &stream)
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/products.ProductsService/DecreaseStock", runtime.WithHTTPPathPattern("/v1/products/decrease-stock"))
+		annotatedContext, err := runtime.AnnotateIncomingContext(ctx, mux, req, "/products.Products/DecreaseStock", runtime.WithHTTPPathPattern("/v1/products/decrease-stock"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := local_request_ProductsService_DecreaseStock_0(annotatedContext, inboundMarshaler, server, req, pathParams)
+		resp, md, err := local_request_Products_DecreaseStock_0(annotatedContext, inboundMarshaler, server, req, pathParams)
 		md.HeaderMD, md.TrailerMD = metadata.Join(md.HeaderMD, stream.Header()), metadata.Join(md.TrailerMD, stream.Trailer())
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_ProductsService_DecreaseStock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Products_DecreaseStock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 
 	return nil
 }
 
-// RegisterProductsServiceHandlerFromEndpoint is same as RegisterProductsServiceHandler but
+// RegisterProductsHandlerFromEndpoint is same as RegisterProductsHandler but
 // automatically dials to "endpoint" and closes the connection when "ctx" gets done.
-func RegisterProductsServiceHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
+func RegisterProductsHandlerFromEndpoint(ctx context.Context, mux *runtime.ServeMux, endpoint string, opts []grpc.DialOption) (err error) {
 	conn, err := grpc.NewClient(endpoint, opts...)
 	if err != nil {
 		return err
@@ -219,83 +219,83 @@ func RegisterProductsServiceHandlerFromEndpoint(ctx context.Context, mux *runtim
 			}
 		}()
 	}()
-	return RegisterProductsServiceHandler(ctx, mux, conn)
+	return RegisterProductsHandler(ctx, mux, conn)
 }
 
-// RegisterProductsServiceHandler registers the http handlers for service ProductsService to "mux".
+// RegisterProductsHandler registers the http handlers for service Products to "mux".
 // The handlers forward requests to the grpc endpoint over "conn".
-func RegisterProductsServiceHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
-	return RegisterProductsServiceHandlerClient(ctx, mux, NewProductsServiceClient(conn))
+func RegisterProductsHandler(ctx context.Context, mux *runtime.ServeMux, conn *grpc.ClientConn) error {
+	return RegisterProductsHandlerClient(ctx, mux, NewProductsClient(conn))
 }
 
-// RegisterProductsServiceHandlerClient registers the http handlers for service ProductsService
-// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ProductsServiceClient".
-// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ProductsServiceClient"
+// RegisterProductsHandlerClient registers the http handlers for service Products
+// to "mux". The handlers forward requests to the grpc endpoint over the given implementation of "ProductsClient".
+// Note: the gRPC framework executes interceptors within the gRPC handler. If the passed in "ProductsClient"
 // doesn't go through the normal gRPC flow (creating a gRPC client etc.) then it will be up to the passed in
-// "ProductsServiceClient" to call the correct interceptors. This client ignores the HTTP middlewares.
-func RegisterProductsServiceHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ProductsServiceClient) error {
-	mux.Handle(http.MethodGet, pattern_ProductsService_GetProduct_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+// "ProductsClient" to call the correct interceptors. This client ignores the HTTP middlewares.
+func RegisterProductsHandlerClient(ctx context.Context, mux *runtime.ServeMux, client ProductsClient) error {
+	mux.Handle(http.MethodGet, pattern_Products_GetProduct_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/products.ProductsService/GetProduct", runtime.WithHTTPPathPattern("/v1/products/{sku}"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/products.Products/GetProduct", runtime.WithHTTPPathPattern("/v1/products/{sku}"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ProductsService_GetProduct_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Products_GetProduct_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_ProductsService_GetProduct_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Products_GetProduct_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_ProductsService_IncreaseStock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_Products_IncreaseStock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/products.ProductsService/IncreaseStock", runtime.WithHTTPPathPattern("/v1/products/increase-stock"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/products.Products/IncreaseStock", runtime.WithHTTPPathPattern("/v1/products/increase-stock"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ProductsService_IncreaseStock_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Products_IncreaseStock_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_ProductsService_IncreaseStock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Products_IncreaseStock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
-	mux.Handle(http.MethodPost, pattern_ProductsService_DecreaseStock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
+	mux.Handle(http.MethodPost, pattern_Products_DecreaseStock_0, func(w http.ResponseWriter, req *http.Request, pathParams map[string]string) {
 		ctx, cancel := context.WithCancel(req.Context())
 		defer cancel()
 		inboundMarshaler, outboundMarshaler := runtime.MarshalerForRequest(mux, req)
-		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/products.ProductsService/DecreaseStock", runtime.WithHTTPPathPattern("/v1/products/decrease-stock"))
+		annotatedContext, err := runtime.AnnotateContext(ctx, mux, req, "/products.Products/DecreaseStock", runtime.WithHTTPPathPattern("/v1/products/decrease-stock"))
 		if err != nil {
 			runtime.HTTPError(ctx, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		resp, md, err := request_ProductsService_DecreaseStock_0(annotatedContext, inboundMarshaler, client, req, pathParams)
+		resp, md, err := request_Products_DecreaseStock_0(annotatedContext, inboundMarshaler, client, req, pathParams)
 		annotatedContext = runtime.NewServerMetadataContext(annotatedContext, md)
 		if err != nil {
 			runtime.HTTPError(annotatedContext, mux, outboundMarshaler, w, req, err)
 			return
 		}
-		forward_ProductsService_DecreaseStock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
+		forward_Products_DecreaseStock_0(annotatedContext, mux, outboundMarshaler, w, req, resp, mux.GetForwardResponseOptions()...)
 	})
 	return nil
 }
 
 var (
-	pattern_ProductsService_GetProduct_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "products", "sku"}, ""))
-	pattern_ProductsService_IncreaseStock_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "products", "increase-stock"}, ""))
-	pattern_ProductsService_DecreaseStock_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "products", "decrease-stock"}, ""))
+	pattern_Products_GetProduct_0    = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 1, 0, 4, 1, 5, 2}, []string{"v1", "products", "sku"}, ""))
+	pattern_Products_IncreaseStock_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "products", "increase-stock"}, ""))
+	pattern_Products_DecreaseStock_0 = runtime.MustPattern(runtime.NewPattern(1, []int{2, 0, 2, 1, 2, 2}, []string{"v1", "products", "decrease-stock"}, ""))
 )
 
 var (
-	forward_ProductsService_GetProduct_0    = runtime.ForwardResponseMessage
-	forward_ProductsService_IncreaseStock_0 = runtime.ForwardResponseMessage
-	forward_ProductsService_DecreaseStock_0 = runtime.ForwardResponseMessage
+	forward_Products_GetProduct_0    = runtime.ForwardResponseMessage
+	forward_Products_IncreaseStock_0 = runtime.ForwardResponseMessage
+	forward_Products_DecreaseStock_0 = runtime.ForwardResponseMessage
 )

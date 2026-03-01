@@ -7,7 +7,7 @@ import "protoc-gen-openapiv2/options/annotations.proto";
 
 option go_package = "ozon-simulator-go-products/api/proto;products";
 
-service ProductsService {
+service Products {
   rpc GetProduct (GetProductRequest) returns (GetProductResponse) {
     option (google.api.http) = {
       get: "/v1/products/{sku}"
@@ -41,7 +41,7 @@ message GetProductResponse {
   uint64 sku = 1;
   string name = 2;
   uint32 count = 3;
-  uint64 price = 4;
+  float price = 4;
 }
 
 message IncreaseStockRequest {

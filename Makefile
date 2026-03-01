@@ -39,7 +39,7 @@ proto-generate:
       -I C:/Git/googleapis \
       -I C:/Git/grpc-gateway \
       -I C:/Git/protoc/include \
-      --go_out=./pkg/proto \
-      --go-grpc_out=./pkg/proto \
-      --grpc-gateway_out=./pkg/proto \
+      --go_out=./internal/app/gen \
+      --go-grpc_out=./internal/app/gen \
+      --grpc-gateway_out=./internal/app/gen \
       api/products.proto

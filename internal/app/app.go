@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net"
 	"net/http"
@@ -9,8 +10,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jva44ka/ozon-simulator-go-products/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
+	"google.golang.org/grpc"
 
-	"github.com/jva44ka/ozon-simulator-go-products/internal/app/handlers/get_product_by_sku_handler"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/repository"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/service"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/config"
@@ -21,6 +22,13 @@ import (
 type App struct {
 	config *config.Config
 	server http.Server
+}
+
+type App struct {
+	grpcServer *grpc.Server
+	httpServer *http.Server
+	db         *sql.DB
+	cfg        *config.Config
 }
 
 func NewApp(configPath string) (*App, error) {
