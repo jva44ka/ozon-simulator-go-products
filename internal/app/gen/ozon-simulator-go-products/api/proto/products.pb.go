@@ -691,7 +691,13 @@ const file_api_products_proto_rawDesc = "" +
 	"\n" +
 	"GetProduct\x12\x1b.products.GetProductRequest\x1a\x1c.products.GetProductResponse\"Z\x92A=\x1a;Получение информации о продукте\x82\xd3\xe4\x93\x02\x14\x12\x12/v1/products/{sku}\x12x\n" +
 	"\rIncreaseStock\x12\x1e.products.IncreaseStockRequest\x1a\x1f.products.IncreaseStockResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/products/increase-stock\x12x\n" +
-	"\rDecreaseStock\x12\x1e.products.DecreaseStockRequest\x1a\x1f.products.DecreaseStockResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/products/decrease-stockB/Z-ozon-simulator-go-products/api/proto;productsb\x06proto3"
+	"\rDecreaseStock\x12\x1e.products.DecreaseStockRequest\x1a\x1f.products.DecreaseStockResponse\"&\x82\xd3\xe4\x93\x02 :\x01*\"\x1b/v1/products/decrease-stockB\x99\x01\x92Ag\x12\x15\n" +
+	"\fProducts API2\x051.0.0*\x02\x01\x022\x10application/json:\x10application/jsonZ\x18\n" +
+	"\x16\n" +
+	"\x06x-auth\x12\f\b\x02\x1a\x06x-auth \x02b\f\n" +
+	"\n" +
+	"\n" +
+	"\x06x-auth\x12\x00Z-ozon-simulator-go-products/api/proto;productsb\x06proto3"
 
 var (
 	file_api_products_proto_rawDescOnce sync.Once

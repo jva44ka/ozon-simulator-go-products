@@ -1,9 +1,10 @@
-http-port: 8081
-grpc-port: 50051
-
-server:
+http-server:
   host:
   port: 8000
+
+grpc-server:
+  host: localhost
+  port: 8002
 
 database:
   user: postgres
@@ -11,3 +12,6 @@ database:
   host: localhost
   port: 5432
   name: ozon_simulator_go_products
+
+authorization:
+  enabled: true

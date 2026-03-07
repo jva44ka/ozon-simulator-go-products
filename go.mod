@@ -5,7 +5,6 @@ go 1.24.0
 toolchain go1.24.9
 
 require (
-	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
 	gopkg.in/yaml.v3 v3.0.1
 )

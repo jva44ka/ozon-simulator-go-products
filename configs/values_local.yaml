@@ -12,3 +12,7 @@ database:
   host: localhost
   port: 5432
   name: ozon_simulator_go_products
+
+authorization:
+  enabled: true
+  admin-user: 'admin'

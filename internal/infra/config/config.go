@@ -31,6 +31,11 @@ type Config struct {
 		Port     string `yaml:"port"`
 		Name     string `yaml:"name"`
 	} `yaml:"database"`
+
+	Authorization struct {
+		Enabled   bool   `yaml:"enabled"`
+		AdminUser string `yaml:"admin-user"`
+	} `yaml:"authorization"`
 }
 
 func LoadConfig(filename string) (*Config, error) {

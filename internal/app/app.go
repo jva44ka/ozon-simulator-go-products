@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"strings"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/jva44ka/ozon-simulator-go-products/swagger"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/app/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -17,7 +18,6 @@ import (
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/repository"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/service"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/config"
-	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 type App struct {
@@ -42,13 +42,30 @@ func NewApp(cfg *config.Config) (*App, error) {
 	repo := repository.NewPgxRepository(pool)
 	domainService := service.NewProductService(repo)
 
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.ChainUnaryInterceptor(
+			middleware.Panic,
+			middleware.Logger,
+			middleware.Auth(cfg),
+			middleware.Validate,
+		),
+	)
 	grpcService := NewGrpcService(domainService)
 
 	pb.RegisterProductsServer(grpcServer, grpcService)
 
 	ctx := context.Background()
-	mux := runtime.NewServeMux()
+	mux := runtime.NewServeMux(
+		runtime.WithIncomingHeaderMatcher(
+			func(header string) (string, bool) {
+				switch strings.ToLower(header) {
+				case "x-auth":
+					return header, true
+				default:
+					return runtime.DefaultHeaderMatcher(header)
+				}
+			},
+		))
 
 	err = pb.RegisterProductsHandlerFromEndpoint(
 		ctx,
@@ -73,9 +90,10 @@ func NewApp(cfg *config.Config) (*App, error) {
 		http.FileServer(http.Dir("./swagger/api")),
 	))
 	// swagger UI
-	httpMux.Handle("/swagger/", httpSwagger.Handler(
-		httpSwagger.URL("/api/products.swagger.json"),
-	))
+	httpMux.HandleFunc("/swagger/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		_, _ = fmt.Fprint(w, swaggerUiHtml)
+	})
 
 	httpServer := &http.Server{
 		Addr:    cfg.HttpServer.Host + ":" + cfg.HttpServer.Port,
