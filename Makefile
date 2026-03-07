@@ -31,7 +31,7 @@ generate-swagger-bin:
 	$(LOCAL_BIN)/swag init -g cmd/server/main.go -o internal/infra/swagger --parseDependency --parseInternal
 
 generate-swagger:
-	swag init -g cmd/server/main.go -o docs --parseDependency --parseInternal
+	swag init -g cmd/server/main.go -o swagger --parseDependency --parseInternal
 
 proto-generate:
 	protoc \
@@ -42,4 +42,5 @@ proto-generate:
       --go_out=./internal/app/gen \
       --go-grpc_out=./internal/app/gen \
       --grpc-gateway_out=./internal/app/gen \
+      --openapiv2_out=swagger \
       api/products.proto

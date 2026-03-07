@@ -8,9 +8,10 @@ import (
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
-	_ "github.com/jva44ka/ozon-simulator-go-products/docs"
+	_ "github.com/jva44ka/ozon-simulator-go-products/swagger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/reflection"
 
 	pb "github.com/jva44ka/ozon-simulator-go-products/internal/app/gen/ozon-simulator-go-products/api/proto"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/repository"
@@ -60,9 +61,18 @@ func NewApp(cfg *config.Config) (*App, error) {
 		return nil, err
 	}
 
+	reflection.Register(grpcServer)
+
+	httpMux := http.NewServeMux()
+	httpMux.Handle("/", mux)
+	httpMux.Handle("/swagger/", http.StripPrefix(
+		"/swagger/",
+		http.FileServer(http.Dir("./swagger")),
+	))
+
 	httpServer := &http.Server{
 		Addr:    cfg.HttpServer.Host + ":" + cfg.HttpServer.Port,
-		Handler: mux,
+		Handler: httpMux,
 	}
 
 	return &App{
