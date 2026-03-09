@@ -14,5 +14,5 @@ database:
   name: ozon_simulator_go_products
 
 authorization:
-  enabled: true
+  enabled: false
   admin-user: 'admin'

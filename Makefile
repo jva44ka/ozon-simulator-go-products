@@ -43,4 +43,4 @@ proto-generate:
       --go-grpc_out=./internal/app/gen \
       --grpc-gateway_out=./internal/app/gen \
       --openapiv2_out=swagger \
-      api/products.proto
+      api/v1/products.proto
