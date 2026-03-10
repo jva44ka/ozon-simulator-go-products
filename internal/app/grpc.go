@@ -35,7 +35,7 @@ func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequ
 	response := &pb.GetProductResponse{
 		Sku:   product.Sku,
 		Name:  product.Name,
-		Price: float32(product.Price),
+		Price: product.Price,
 		Count: product.Count,
 	}
 
