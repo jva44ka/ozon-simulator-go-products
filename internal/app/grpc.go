@@ -27,6 +27,7 @@ func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequ
 
 	product, err := s.ProductService.GetProductBySku(ctx, request.Sku)
 	if err != nil {
+		//TODO: Маппинг конкретных внутренних ошибок на статус коды
 		return nil, status.Errorf(codes.Internal, "error getting product: %v", err)
 	}
 
@@ -38,7 +39,9 @@ func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequ
 	}, nil
 }
 
-func (s *GrpcService) IncreaseStock(ctx context.Context, request *pb.IncreaseStockRequest) (*pb.IncreaseStockResponse, error) {
+func (s *GrpcService) IncreaseStock(
+	ctx context.Context,
+	request *pb.IncreaseProductCountRequest) (*pb.IncreaseProductCountResponse, error) {
 	if len(request.Stocks) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "stocks must not be empty")
 	}
@@ -55,13 +58,16 @@ func (s *GrpcService) IncreaseStock(ctx context.Context, request *pb.IncreaseSto
 	}
 
 	if err := s.ProductService.IncreaseStock(ctx, stocks); err != nil {
+		//TODO: Маппинг конкретных внутренних ошибок на статус коды
 		return nil, status.Errorf(codes.Internal, "error increasing stock: %v", err)
 	}
 
-	return &pb.IncreaseStockResponse{}, nil
+	return &pb.IncreaseProductCountResponse{}, nil
 }
 
-func (s *GrpcService) DecreaseStock(ctx context.Context, request *pb.DecreaseStockRequest) (*pb.DecreaseStockResponse, error) {
+func (s *GrpcService) DecreaseStock(
+	ctx context.Context,
+	request *pb.DecreaseProductCountRequest) (*pb.DecreaseProductCountResponse, error) {
 	if len(request.Stocks) == 0 {
 		return nil, status.Errorf(codes.InvalidArgument, "stocks must not be empty")
 	}
@@ -78,8 +84,9 @@ func (s *GrpcService) DecreaseStock(ctx context.Context, request *pb.DecreaseSto
 	}
 
 	if err := s.ProductService.DecreaseStock(ctx, stocks); err != nil {
+		//TODO: Маппинг конкретных внутренних ошибок на статус коды
 		return nil, status.Errorf(codes.Internal, "error decreasing stock: %v", err)
 	}
 
-	return &pb.DecreaseStockResponse{}, nil
+	return &pb.DecreaseProductCountResponse{}, nil
 }

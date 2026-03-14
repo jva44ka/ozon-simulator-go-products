@@ -45,16 +45,16 @@ service Products {
     };
   }
 
-  rpc IncreaseStock (IncreaseStockRequest) returns (IncreaseStockResponse){
+  rpc IncreaseProductCount (IncreaseProductCountRequest) returns (IncreaseProductCountResponse){
     option (google.api.http) = {
-      post: "/v1/products/increase-stock",
+      post: "/v1/products/increase-count",
       body: "*"
     };
   }
 
-  rpc DecreaseStock (DecreaseStockRequest) returns (DecreaseStockResponse){
+  rpc DecreaseProductCount (DecreaseProductCountRequest) returns (DecreaseProductCountResponse){
     option (google.api.http) = {
-      post: "/v1/products/decrease-stock",
+      post: "/v1/products/decrease-count",
       body: "*"
     };
   }
@@ -71,7 +71,7 @@ message GetProductResponse {
   double price = 4;
 }
 
-message IncreaseStockRequest {
+message IncreaseProductCountRequest {
   repeated IncreaseStockBatch stocks = 1;
 
   message IncreaseStockBatch {
@@ -80,9 +80,9 @@ message IncreaseStockRequest {
   }
 }
 
-message IncreaseStockResponse {}
+message IncreaseProductCountResponse {}
 
-message DecreaseStockRequest {
+message DecreaseProductCountRequest {
   repeated IncreaseStockBatch stocks = 1;
 
   message IncreaseStockBatch {
@@ -91,4 +91,4 @@ message DecreaseStockRequest {
   }
 }
 
-message DecreaseStockResponse {}
+message DecreaseProductCountResponse {}
