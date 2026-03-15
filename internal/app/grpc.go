@@ -2,8 +2,6 @@ package app
 
 import (
 	"context"
-	"errors"
-	"fmt"
 
 	pb "github.com/jva44ka/ozon-simulator-go-products/internal/app/gen/ozon-simulator-go-products/api/v1/proto"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/service"
@@ -22,38 +20,73 @@ func NewGrpcService(productService *service.ProductService) *GrpcService {
 	return &GrpcService{ProductService: *productService}
 }
 
-func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequest) (resp *pb.GetProductResponse, err error) {
+func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequest) (*pb.GetProductResponse, error) {
 	if request.Sku < 1 {
-		return &pb.GetProductResponse{}, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
+		return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 	}
 
 	product, err := s.ProductService.GetProductBySku(ctx, request.Sku)
 	if err != nil {
-		return &pb.GetProductResponse{}, fmt.Errorf("error getting product: %w", err)
+		//TODO: Маппинг конкретных внутренних ошибок на статус коды
+		return nil, status.Errorf(codes.Internal, "error getting product: %v", err)
 	}
 
-	response := &pb.GetProductResponse{
+	return &pb.GetProductResponse{
 		Sku:   product.Sku,
 		Name:  product.Name,
 		Price: product.Price,
 		Count: product.Count,
+	}, nil
+}
+
+func (s *GrpcService) IncreaseProductCount(
+	ctx context.Context,
+	request *pb.IncreaseProductCountRequest) (*pb.IncreaseProductCountResponse, error) {
+	if len(request.Products) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "Products must not be empty")
 	}
 
-	return response, nil
+	products := make([]service.UpdateProductCount, 0, len(request.Products))
+	for _, stock := range request.Products {
+		if stock.Sku < 1 {
+			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
+		}
+		products = append(products, service.UpdateProductCount{
+			Sku:   stock.Sku,
+			Delta: stock.Count,
+		})
+	}
+
+	if err := s.ProductService.IncreaseCount(ctx, products); err != nil {
+		//TODO: Маппинг конкретных внутренних ошибок на статус коды
+		return nil, status.Errorf(codes.Internal, "error increasing stock: %v", err)
+	}
+
+	return &pb.IncreaseProductCountResponse{}, nil
 }
 
-func (s *GrpcService) IncreaseStock(
-	_ context.Context,
-	_ *pb.IncreaseStockRequest,
-) (*pb.IncreaseStockResponse, error) {
+func (s *GrpcService) DecreaseProductCount(
+	ctx context.Context,
+	request *pb.DecreaseProductCountRequest) (*pb.DecreaseProductCountResponse, error) {
+	if len(request.Products) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "products must not be empty")
+	}
 
-	return nil, errors.New("unimplemented IncreaseStock")
-}
+	products := make([]service.UpdateProductCount, 0, len(request.Products))
+	for _, stock := range request.Products {
+		if stock.Sku < 1 {
+			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
+		}
+		products = append(products, service.UpdateProductCount{
+			Sku:   stock.Sku,
+			Delta: stock.Count,
+		})
+	}
 
-func (s *GrpcService) DecreaseStock(
-	_ context.Context,
-	_ *pb.DecreaseStockRequest,
-) (*pb.DecreaseStockResponse, error) {
+	if err := s.ProductService.DecreaseCount(ctx, products); err != nil {
+		//TODO: Маппинг конкретных внутренних ошибок на статус коды
+		return nil, status.Errorf(codes.Internal, "error decreasing stock: %v", err)
+	}
 
-	return nil, errors.New("unimplemented DecreaseStock")
+	return &pb.DecreaseProductCountResponse{}, nil
 }
