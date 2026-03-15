@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/model"
 )
@@ -10,8 +12,7 @@ import (
 type ProductRepository interface {
 	GetProductBySku(ctx context.Context, sku uint64) (*model.Product, error)
 	GetProductsBySkus(ctx context.Context, skus []uint64) ([]*model.Product, error)
-	IncreaseCount(ctx context.Context, stocks []UpdateProductCount) error
-	DecreaseCount(ctx context.Context, stocks []UpdateProductCount) error
+	UpdateCount(ctx context.Context, products []*model.Product) error
 }
 
 type ProductService struct {
@@ -36,25 +37,32 @@ func (s *ProductService) GetProductBySku(ctx context.Context, sku uint64) (*mode
 	return product, nil
 }
 
-func (s *ProductService) IncreaseStock(ctx context.Context, products []UpdateProductCount) error {
-	if _, err := s.validateProductsExist(ctx, products); err != nil {
-		return err
-	}
-
-	if err := s.productRepository.IncreaseCount(ctx, products); err != nil {
-		return fmt.Errorf("productRepository.IncreaseCount: %w", err)
-	}
-	return nil
-}
-
-func (s *ProductService) DecreaseStock(ctx context.Context, products []UpdateProductCount) error {
-	existingProducts, err := s.validateProductsExist(ctx, products)
+func (s *ProductService) IncreaseCount(ctx context.Context, products []UpdateProductCount) error {
+	existingProductsMap, err := s.validateProductsExist(ctx, products)
 	if err != nil {
 		return err
 	}
 
 	for _, product := range products {
-		existingProduct := existingProducts[product.Sku]
+		existingProductsMap[product.Sku].Count = +product.Delta
+	}
+
+	existingProductsSlice := slices.Collect(maps.Values(existingProductsMap))
+
+	if err = s.productRepository.UpdateCount(ctx, existingProductsSlice); err != nil {
+		return fmt.Errorf("productRepository.IncreaseCount: %w", err)
+	}
+	return nil
+}
+
+func (s *ProductService) DecreaseCount(ctx context.Context, products []UpdateProductCount) error {
+	existingProductsMap, err := s.validateProductsExist(ctx, products)
+	if err != nil {
+		return err
+	}
+
+	for _, product := range products {
+		existingProduct := existingProductsMap[product.Sku]
 		if existingProduct.Count < product.Delta {
 			return fmt.Errorf(
 				"insufficient product for sku %d: have %d, want %d",
@@ -62,9 +70,17 @@ func (s *ProductService) DecreaseStock(ctx context.Context, products []UpdatePro
 				existingProduct.Count,
 				product.Delta)
 		}
+
+		existingProduct.Count = -product.Delta
 	}
 
-	if err = s.productRepository.DecreaseCount(ctx, products); err != nil {
+	for _, product := range products {
+		existingProductsMap[product.Sku].Count = +product.Delta
+	}
+
+	existingProductsSlice := slices.Collect(maps.Values(existingProductsMap))
+
+	if err = s.productRepository.UpdateCount(ctx, existingProductsSlice); err != nil {
 		return fmt.Errorf("productRepository.DecreaseCount: %w", err)
 	}
 

@@ -137,7 +137,7 @@ func (x *GetProductResponse) GetPrice() float64 {
 
 type IncreaseProductCountRequest struct {
 	state         protoimpl.MessageState                            `protogen:"open.v1"`
-	Stocks        []*IncreaseProductCountRequest_IncreaseStockBatch `protobuf:"bytes,1,rep,name=stocks,proto3" json:"stocks,omitempty"`
+	Products      []*IncreaseProductCountRequest_IncreaseStockBatch `protobuf:"bytes,1,rep,name=products,proto3" json:"products,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -172,9 +172,9 @@ func (*IncreaseProductCountRequest) Descriptor() ([]byte, []int) {
 	return file_api_v1_products_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *IncreaseProductCountRequest) GetStocks() []*IncreaseProductCountRequest_IncreaseStockBatch {
+func (x *IncreaseProductCountRequest) GetProducts() []*IncreaseProductCountRequest_IncreaseStockBatch {
 	if x != nil {
-		return x.Stocks
+		return x.Products
 	}
 	return nil
 }
@@ -217,7 +217,7 @@ func (*IncreaseProductCountResponse) Descriptor() ([]byte, []int) {
 
 type DecreaseProductCountRequest struct {
 	state         protoimpl.MessageState                            `protogen:"open.v1"`
-	Stocks        []*DecreaseProductCountRequest_IncreaseStockBatch `protobuf:"bytes,1,rep,name=stocks,proto3" json:"stocks,omitempty"`
+	Products      []*DecreaseProductCountRequest_IncreaseStockBatch `protobuf:"bytes,1,rep,name=products,proto3" json:"products,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -252,9 +252,9 @@ func (*DecreaseProductCountRequest) Descriptor() ([]byte, []int) {
 	return file_api_v1_products_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *DecreaseProductCountRequest) GetStocks() []*DecreaseProductCountRequest_IncreaseStockBatch {
+func (x *DecreaseProductCountRequest) GetProducts() []*DecreaseProductCountRequest_IncreaseStockBatch {
 	if x != nil {
-		return x.Stocks
+		return x.Products
 	}
 	return nil
 }
@@ -410,15 +410,15 @@ const file_api_v1_products_proto_rawDesc = "" +
 	"\x03sku\x18\x01 \x01(\x04R\x03sku\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x14\n" +
 	"\x05count\x18\x03 \x01(\rR\x05count\x12\x14\n" +
-	"\x05price\x18\x04 \x01(\x01R\x05price\"\xad\x01\n" +
-	"\x1bIncreaseProductCountRequest\x12P\n" +
-	"\x06stocks\x18\x01 \x03(\v28.products.IncreaseProductCountRequest.IncreaseStockBatchR\x06stocks\x1a<\n" +
+	"\x05price\x18\x04 \x01(\x01R\x05price\"\xb1\x01\n" +
+	"\x1bIncreaseProductCountRequest\x12T\n" +
+	"\bproducts\x18\x01 \x03(\v28.products.IncreaseProductCountRequest.IncreaseStockBatchR\bproducts\x1a<\n" +
 	"\x12IncreaseStockBatch\x12\x10\n" +
 	"\x03sku\x18\x01 \x01(\x04R\x03sku\x12\x14\n" +
 	"\x05count\x18\x02 \x01(\rR\x05count\"\x1e\n" +
-	"\x1cIncreaseProductCountResponse\"\xad\x01\n" +
-	"\x1bDecreaseProductCountRequest\x12P\n" +
-	"\x06stocks\x18\x01 \x03(\v28.products.DecreaseProductCountRequest.IncreaseStockBatchR\x06stocks\x1a<\n" +
+	"\x1cIncreaseProductCountResponse\"\xb1\x01\n" +
+	"\x1bDecreaseProductCountRequest\x12T\n" +
+	"\bproducts\x18\x01 \x03(\v28.products.DecreaseProductCountRequest.IncreaseStockBatchR\bproducts\x1a<\n" +
 	"\x12IncreaseStockBatch\x12\x10\n" +
 	"\x03sku\x18\x01 \x01(\x04R\x03sku\x12\x14\n" +
 	"\x05count\x18\x02 \x01(\rR\x05count\"\x1e\n" +
@@ -459,8 +459,8 @@ var file_api_v1_products_proto_goTypes = []any{
 	(*DecreaseProductCountRequest_IncreaseStockBatch)(nil), // 7: products.DecreaseProductCountRequest.IncreaseStockBatch
 }
 var file_api_v1_products_proto_depIdxs = []int32{
-	6, // 0: products.IncreaseProductCountRequest.stocks:type_name -> products.IncreaseProductCountRequest.IncreaseStockBatch
-	7, // 1: products.DecreaseProductCountRequest.stocks:type_name -> products.DecreaseProductCountRequest.IncreaseStockBatch
+	6, // 0: products.IncreaseProductCountRequest.products:type_name -> products.IncreaseProductCountRequest.IncreaseStockBatch
+	7, // 1: products.DecreaseProductCountRequest.products:type_name -> products.DecreaseProductCountRequest.IncreaseStockBatch
 	0, // 2: products.Products.GetProduct:input_type -> products.GetProductRequest
 	2, // 3: products.Products.IncreaseProductCount:input_type -> products.IncreaseProductCountRequest
 	4, // 4: products.Products.DecreaseProductCount:input_type -> products.DecreaseProductCountRequest

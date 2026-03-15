@@ -39,25 +39,25 @@ func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequ
 	}, nil
 }
 
-func (s *GrpcService) IncreaseStock(
+func (s *GrpcService) IncreaseProductCount(
 	ctx context.Context,
 	request *pb.IncreaseProductCountRequest) (*pb.IncreaseProductCountResponse, error) {
-	if len(request.Stocks) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "stocks must not be empty")
+	if len(request.Products) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "Products must not be empty")
 	}
 
-	stocks := make([]service.UpdateProductCount, 0, len(request.Stocks))
-	for _, stock := range request.Stocks {
+	products := make([]service.UpdateProductCount, 0, len(request.Products))
+	for _, stock := range request.Products {
 		if stock.Sku < 1 {
 			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 		}
-		stocks = append(stocks, service.UpdateProductCount{
+		products = append(products, service.UpdateProductCount{
 			Sku:   stock.Sku,
 			Delta: stock.Count,
 		})
 	}
 
-	if err := s.ProductService.IncreaseStock(ctx, stocks); err != nil {
+	if err := s.ProductService.IncreaseCount(ctx, products); err != nil {
 		//TODO: Маппинг конкретных внутренних ошибок на статус коды
 		return nil, status.Errorf(codes.Internal, "error increasing stock: %v", err)
 	}
@@ -65,25 +65,25 @@ func (s *GrpcService) IncreaseStock(
 	return &pb.IncreaseProductCountResponse{}, nil
 }
 
-func (s *GrpcService) DecreaseStock(
+func (s *GrpcService) DecreaseProductCount(
 	ctx context.Context,
 	request *pb.DecreaseProductCountRequest) (*pb.DecreaseProductCountResponse, error) {
-	if len(request.Stocks) == 0 {
-		return nil, status.Errorf(codes.InvalidArgument, "stocks must not be empty")
+	if len(request.Products) == 0 {
+		return nil, status.Errorf(codes.InvalidArgument, "products must not be empty")
 	}
 
-	stocks := make([]service.UpdateProductCount, 0, len(request.Stocks))
-	for _, stock := range request.Stocks {
+	products := make([]service.UpdateProductCount, 0, len(request.Products))
+	for _, stock := range request.Products {
 		if stock.Sku < 1 {
 			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 		}
-		stocks = append(stocks, service.UpdateProductCount{
+		products = append(products, service.UpdateProductCount{
 			Sku:   stock.Sku,
 			Delta: stock.Count,
 		})
 	}
 
-	if err := s.ProductService.DecreaseStock(ctx, stocks); err != nil {
+	if err := s.ProductService.DecreaseCount(ctx, products); err != nil {
 		//TODO: Маппинг конкретных внутренних ошибок на статус коды
 		return nil, status.Errorf(codes.Internal, "error decreasing stock: %v", err)
 	}
