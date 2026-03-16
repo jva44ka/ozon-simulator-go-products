@@ -10,8 +10,7 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/app/middleware"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/metrics"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,32 +21,6 @@ import (
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/service"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/config"
 )
-
-type repositoryMetrics struct {
-	requestsTotal          *prometheus.CounterVec
-	optimisticLockFailures prometheus.Counter
-}
-
-func newRepositoryMetrics() *repositoryMetrics {
-	return &repositoryMetrics{
-		requestsTotal: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "products_db_requests_total",
-			Help: "Total number of products DB requests",
-		}, []string{"method", "status"}),
-		optimisticLockFailures: promauto.NewCounter(prometheus.CounterOpts{
-			Name: "products_optimistic_lock_failures_total",
-			Help: "Total number of optimistic lock failures in product count updates",
-		}),
-	}
-}
-
-func (m *repositoryMetrics) RecordRequest(method, status string) {
-	m.requestsTotal.WithLabelValues(method, status).Inc()
-}
-
-func (m *repositoryMetrics) IncOptimisticLockFailure() {
-	m.optimisticLockFailures.Inc()
-}
 
 type App struct {
 	grpcServer *grpc.Server
@@ -68,13 +41,13 @@ func NewApp(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("pgxpool.New: %w", err)
 	}
 
-	repo := repository.NewProductRepository(pool, newRepositoryMetrics())
+	repo := repository.NewProductRepository(pool, metrics.NewDbMetrics())
 	domainService := service.NewProductService(repo)
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			middleware.Panic,
-			middleware.Metrics,
+			middleware.ResponseTime(metrics.NewRequestMetrics()),
 			middleware.Logger,
 			middleware.Auth(cfg),
 			middleware.Validate,

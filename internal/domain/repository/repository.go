@@ -10,8 +10,8 @@ import (
 )
 
 type Metrics interface {
-	RecordRequest(method, status string)
-	IncOptimisticLockFailure()
+	ReportRequest(method, status string)
+	ReportOptimisticLockFailure()
 }
 
 type ProductRepository struct {
@@ -48,7 +48,7 @@ WHERE sku = ANY($1);`
 
 	rows, err := r.pool.Query(ctx, query, skus)
 	if err != nil {
-		r.metrics.RecordRequest("GetProductsBySkus", "error")
+		r.metrics.ReportRequest("GetProductsBySkus", "error")
 		return nil, fmt.Errorf("PgxRepository.GetProductsBySkus: %w", err)
 	}
 	defer rows.Close()
@@ -57,7 +57,7 @@ WHERE sku = ANY($1);`
 	for rows.Next() {
 		var row ProductRow
 		if err = rows.Scan(&row.sku, &row.price, &row.name, &row.count, &row.xmin); err != nil {
-			r.metrics.RecordRequest("GetProductsBySkus", "error")
+			r.metrics.ReportRequest("GetProductsBySkus", "error")
 			return nil, fmt.Errorf("PgxRepository.GetProductsBySkus: %w", err)
 		}
 		products = append(products, &model.Product{
@@ -69,7 +69,7 @@ WHERE sku = ANY($1);`
 		})
 	}
 
-	r.metrics.RecordRequest("GetProductsBySkus", "success")
+	r.metrics.ReportRequest("GetProductsBySkus", "success")
 	return products, nil
 }
 
@@ -98,12 +98,12 @@ WHERE sku = $1 AND xmin = $2;`
 		}
 
 		if affected != int64(len(products)) {
-			r.metrics.RecordRequest("UpdateCount", "optimistic_lock_failure")
-			r.metrics.IncOptimisticLockFailure()
+			r.metrics.ReportRequest("UpdateCount", "error")
+			r.metrics.ReportOptimisticLockFailure()
 			return fmt.Errorf("ProductRepository.UpdateCount: optimistic lock failed, retry required")
 		}
 
-		r.metrics.RecordRequest("UpdateCount", "success")
+		r.metrics.ReportRequest("UpdateCount", "success")
 		return nil
 	})
 }
