@@ -10,6 +10,8 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/app/middleware"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/metrics"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
@@ -39,12 +41,13 @@ func NewApp(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("pgxpool.New: %w", err)
 	}
 
-	repo := repository.NewProductRepository(pool)
+	repo := repository.NewProductRepository(pool, metrics.NewDbMetrics())
 	domainService := service.NewProductService(repo)
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
 			middleware.Panic,
+			middleware.ResponseTime(metrics.NewRequestMetrics()),
 			middleware.Logger,
 			middleware.Auth(cfg),
 			middleware.Validate,
@@ -94,6 +97,8 @@ func NewApp(cfg *config.Config) (*App, error) {
 		w.Header().Set("Content-Type", "text/html")
 		_, _ = fmt.Fprint(w, swaggerUiHtml)
 	})
+	// prometheus metrics
+	httpMux.Handle("/metrics", promhttp.Handler())
 
 	httpServer := &http.Server{
 		Addr:    cfg.HttpServer.Host + ":" + cfg.HttpServer.Port,
