@@ -13,7 +13,15 @@ import (
 func StatusCode(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	resp, err = handler(ctx, req)
 
-	return resp, grpcStatusFromErr(err)
+	if err != nil {
+		if _, isRpcError := status.FromError(err); isRpcError {
+			return resp, err
+		} else {
+			return resp, grpcStatusFromErr(err)
+		}
+	}
+
+	return resp, nil
 }
 
 func grpcStatusFromErr(err error) error {
