@@ -16,3 +16,7 @@ database:
 authorization:
   enabled: false
   admin-user: 'admin'
+
+logging:
+  log-request-body: true
+  log-response-body: true

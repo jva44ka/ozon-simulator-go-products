@@ -6,7 +6,7 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/errors"
+	domainErrors "github.com/jva44ka/ozon-simulator-go-products/internal/domain/errors"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/model"
 )
 
@@ -33,6 +33,10 @@ func (s *ProductService) GetProductBySku(ctx context.Context, sku uint64) (*mode
 	product, err := s.productRepository.GetProductBySku(ctx, sku)
 	if err != nil {
 		return nil, fmt.Errorf("productRepository.GetProductBySku: %w", err)
+	}
+
+	if product == nil {
+		return nil, domainErrors.NewProductNotFoundError(sku)
 	}
 
 	return product, nil
@@ -65,9 +69,11 @@ func (s *ProductService) DecreaseCount(ctx context.Context, products []UpdatePro
 	for _, product := range products {
 		existingProduct := existingProductsMap[product.Sku]
 		if existingProduct.Count < product.Delta {
-			return fmt.Errorf("sku %d (have %d, want %d): %w",
-				product.Sku, existingProduct.Count, product.Delta,
-				errors.ErrInsufficientProduct)
+			return domainErrors.NewInsufficientProductError(
+				product.Sku,
+				existingProduct.Count,
+				product.Delta,
+			)
 		}
 
 		existingProduct.Count -= product.Delta
@@ -102,7 +108,7 @@ func (s *ProductService) validateProductsExist(
 
 	for _, product := range products {
 		if _, ok := existingProductMap[product.Sku]; !ok {
-			return nil, fmt.Errorf("sku %d: %w", product.Sku, errors.ErrProductNotFound)
+			return nil, domainErrors.NewProductNotFoundError(product.Sku)
 		}
 	}
 

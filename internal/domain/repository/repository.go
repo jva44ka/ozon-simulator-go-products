@@ -37,6 +37,10 @@ func (r *ProductRepository) GetProductBySku(ctx context.Context, sku uint64) (*m
 		return nil, err
 	}
 
+	if len(products) == 0 {
+		return nil, nil
+	}
+
 	return products[0], nil
 }
 

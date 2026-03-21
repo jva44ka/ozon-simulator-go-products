@@ -48,7 +48,7 @@ func NewApp(cfg *config.Config) (*App, error) {
 		grpc.ChainUnaryInterceptor(
 			middleware.Panic,
 			middleware.ResponseTime(metrics.NewRequestMetrics()),
-			middleware.Logger,
+			middleware.Logger(cfg),
 			middleware.Auth(cfg),
 			middleware.Validate,
 		),

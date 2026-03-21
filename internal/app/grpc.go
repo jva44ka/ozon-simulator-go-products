@@ -5,7 +5,7 @@ import (
 	"errors"
 
 	pb "github.com/jva44ka/ozon-simulator-go-products/internal/app/gen/ozon-simulator-go-products/api/v1/proto"
-	errors2 "github.com/jva44ka/ozon-simulator-go-products/internal/domain/errors"
+	domainErrors "github.com/jva44ka/ozon-simulator-go-products/internal/domain/errors"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/service"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -90,13 +90,11 @@ func (s *GrpcService) DecreaseProductCount(
 	return &pb.DecreaseProductCountResponse{}, nil
 }
 
-// grpcStatusFromErr маппит доменные ошибки на gRPC status codes.
-// Неизвестные ошибки → codes.Internal.
 func grpcStatusFromErr(err error) error {
 	switch {
-	case errors.Is(err, errors2.ErrProductNotFound):
+	case errors.Is(err, &domainErrors.ProductNotFoundError{}):
 		return status.Errorf(codes.NotFound, err.Error())
-	case errors.Is(err, errors2.ErrInsufficientProduct):
+	case errors.Is(err, &domainErrors.InsufficientProductError{}):
 		return status.Errorf(codes.FailedPrecondition, err.Error())
 	default:
 		return status.Errorf(codes.Internal, "internal error: %v", err)

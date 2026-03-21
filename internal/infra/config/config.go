@@ -36,6 +36,11 @@ type Config struct {
 		Enabled   bool   `yaml:"enabled"`
 		AdminUser string `yaml:"admin-user"`
 	} `yaml:"authorization"`
+
+	Logging struct {
+		LogRequestBody  bool `yaml:"log-request-body"`
+		LogResponseBody bool `yaml:"log-response-body"`
+	} `yaml:"logging"`
 }
 
 func LoadConfig(filename string) (*Config, error) {

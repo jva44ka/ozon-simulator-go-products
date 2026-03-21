@@ -17,7 +17,6 @@ func Auth(cfg *config.Config) grpc.UnaryServerInterceptor {
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (any, error) {
-
 		if !cfg.Authorization.Enabled {
 			return handler(ctx, req)
 		}
