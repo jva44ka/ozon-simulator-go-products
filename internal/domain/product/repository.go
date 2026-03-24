@@ -1,4 +1,4 @@
-package repository
+package product
 
 import (
 	"context"
@@ -6,24 +6,23 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/model"
 )
 
-type Metrics interface {
+type RepositoryMetrics interface {
 	ReportRequest(method, status string)
 	ReportOptimisticLockFailure()
 }
 
-type ProductRepository struct {
+type PgxRepository struct {
 	pool    *pgxpool.Pool
-	metrics Metrics
+	metrics RepositoryMetrics
 }
 
-func NewProductRepository(pool *pgxpool.Pool, metrics Metrics) *ProductRepository {
-	return &ProductRepository{pool: pool, metrics: metrics}
+func NewPgxRepository(pool *pgxpool.Pool, metrics RepositoryMetrics) *PgxRepository {
+	return &PgxRepository{pool: pool, metrics: metrics}
 }
 
-type ProductRow struct {
+type productRow struct {
 	sku   int64
 	price float64
 	name  string
@@ -31,20 +30,18 @@ type ProductRow struct {
 	xmin  uint32
 }
 
-func (r *ProductRepository) GetProductBySku(ctx context.Context, sku uint64) (*model.Product, error) {
+func (r *PgxRepository) GetProductBySku(ctx context.Context, sku uint64) (*Product, error) {
 	products, err := r.GetProductsBySkus(ctx, []uint64{sku})
 	if err != nil {
 		return nil, err
 	}
-
 	if len(products) == 0 {
 		return nil, nil
 	}
-
 	return products[0], nil
 }
 
-func (r *ProductRepository) GetProductsBySkus(ctx context.Context, skus []uint64) ([]*model.Product, error) {
+func (r *PgxRepository) GetProductsBySkus(ctx context.Context, skus []uint64) ([]*Product, error) {
 	const query = `
 SELECT sku, price, name, count, xmin
 FROM products
@@ -57,14 +54,14 @@ WHERE sku = ANY($1);`
 	}
 	defer rows.Close()
 
-	products := make([]*model.Product, 0, len(skus))
+	products := make([]*Product, 0, len(skus))
 	for rows.Next() {
-		var row ProductRow
+		var row productRow
 		if err = rows.Scan(&row.sku, &row.price, &row.name, &row.count, &row.xmin); err != nil {
 			r.metrics.ReportRequest("GetProductsBySkus", "error")
 			return nil, fmt.Errorf("PgxRepository.GetProductsBySkus: %w", err)
 		}
-		products = append(products, &model.Product{
+		products = append(products, &Product{
 			Sku:           uint64(row.sku),
 			Price:         row.price,
 			Name:          row.name,
@@ -77,25 +74,23 @@ WHERE sku = ANY($1);`
 	return products, nil
 }
 
-// UpdateCount обновляет count с оптимистичной блокировкой через xmin.
-// Используется для Increase, Reserve, Release.
-func (r *ProductRepository) UpdateCount(ctx context.Context, products []*model.Product) error {
+func (r *PgxRepository) UpdateCount(ctx context.Context, products []*Product) error {
 	const query = `
 UPDATE products
 SET count = $3
 WHERE sku = $1 AND xmin = $2;`
 
-	return r.execBatch(ctx, "UpdateCount", products, query, func(p *model.Product) []any {
+	return r.execBatch(ctx, "UpdateCount", products, query, func(p *Product) []any {
 		return []any{int64(p.Sku), p.TransactionId, p.Count}
 	})
 }
 
-func (r *ProductRepository) execBatch(
+func (r *PgxRepository) execBatch(
 	ctx context.Context,
 	method string,
-	products []*model.Product,
+	products []*Product,
 	query string,
-	args func(*model.Product) []any,
+	args func(*Product) []any,
 ) error {
 	return pgx.BeginTxFunc(ctx, r.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		batch := &pgx.Batch{}
@@ -110,7 +105,7 @@ func (r *ProductRepository) execBatch(
 		for range products {
 			tag, err := results.Exec()
 			if err != nil {
-				return fmt.Errorf("ProductRepository.%s: %w", method, err)
+				return fmt.Errorf("PgxRepository.%s: %w", method, err)
 			}
 			affected += tag.RowsAffected()
 		}
@@ -118,7 +113,7 @@ func (r *ProductRepository) execBatch(
 		if affected != int64(len(products)) {
 			r.metrics.ReportRequest(method, "error")
 			r.metrics.ReportOptimisticLockFailure()
-			return fmt.Errorf("ProductRepository.%s: optimistic lock failed, retry required", method)
+			return fmt.Errorf("PgxRepository.%s: optimistic lock failed, retry required", method)
 		}
 
 		r.metrics.ReportRequest(method, "success")

@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/product"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/reservation"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/service"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/kafka"
 )
 
@@ -17,7 +17,7 @@ type ReservationRepository interface {
 }
 
 type ProductService interface {
-	ReleaseReservation(ctx context.Context, products []service.UpdateProductCount) error
+	ReleaseReservation(ctx context.Context, products []product.UpdateCount) error
 }
 
 type ReservationExpiryJob struct {
@@ -71,15 +71,14 @@ func (j *ReservationExpiryJob) tick(ctx context.Context) error {
 		return nil
 	}
 
-	// Aggregate counts by SKU for the release call
 	grouped := make(map[uint64]uint32, len(expired))
 	for _, r := range expired {
 		grouped[r.Sku] += r.Count
 	}
 
-	products := make([]service.UpdateProductCount, 0, len(grouped))
+	products := make([]product.UpdateCount, 0, len(grouped))
 	for sku, count := range grouped {
-		products = append(products, service.UpdateProductCount{Sku: sku, Delta: count})
+		products = append(products, product.UpdateCount{Sku: sku, Delta: count})
 	}
 
 	if err = j.productService.ReleaseReservation(ctx, products); err != nil {

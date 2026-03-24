@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	pb "github.com/jva44ka/ozon-simulator-go-products/internal/app/gen/ozon-simulator-go-products/api/v1/proto"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/service"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/product"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,11 +14,11 @@ var _ pb.ProductsServer = (*GrpcService)(nil)
 
 type GrpcService struct {
 	pb.UnimplementedProductsServer
-	ProductService service.ProductService
+	svc product.Service
 }
 
-func NewGrpcService(productService *service.ProductService) *GrpcService {
-	return &GrpcService{ProductService: *productService}
+func NewGrpcService(svc *product.Service) *GrpcService {
+	return &GrpcService{svc: *svc}
 }
 
 func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequest) (*pb.GetProductResponse, error) {
@@ -26,16 +26,16 @@ func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequ
 		return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 	}
 
-	product, err := s.ProductService.GetProductBySku(ctx, request.Sku)
+	p, err := s.svc.GetProductBySku(ctx, request.Sku)
 	if err != nil {
 		return nil, fmt.Errorf("GrpcService.GetProduct: %w", err)
 	}
 
 	return &pb.GetProductResponse{
-		Sku:   product.Sku,
-		Name:  product.Name,
-		Price: product.Price,
-		Count: product.Count,
+		Sku:   p.Sku,
+		Name:  p.Name,
+		Price: p.Price,
+		Count: p.Count,
 	}, nil
 }
 
@@ -46,18 +46,18 @@ func (s *GrpcService) IncreaseProductCount(
 		return nil, status.Errorf(codes.InvalidArgument, "products must not be empty")
 	}
 
-	products := make([]service.UpdateProductCount, 0, len(request.Products))
+	products := make([]product.UpdateCount, 0, len(request.Products))
 	for _, stock := range request.Products {
 		if stock.Sku < 1 {
 			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 		}
-		products = append(products, service.UpdateProductCount{
+		products = append(products, product.UpdateCount{
 			Sku:   stock.Sku,
 			Delta: stock.Count,
 		})
 	}
 
-	if err := s.ProductService.IncreaseCount(ctx, products); err != nil {
+	if err := s.svc.IncreaseCount(ctx, products); err != nil {
 		return nil, fmt.Errorf("GrpcService.IncreaseProductCount: %w", err)
 	}
 
@@ -71,18 +71,18 @@ func (s *GrpcService) ReserveProduct(
 		return nil, status.Errorf(codes.InvalidArgument, "products must not be empty")
 	}
 
-	products := make([]service.UpdateProductCount, 0, len(request.Products))
+	products := make([]product.UpdateCount, 0, len(request.Products))
 	for _, stock := range request.Products {
 		if stock.Sku < 1 {
 			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 		}
-		products = append(products, service.UpdateProductCount{
+		products = append(products, product.UpdateCount{
 			Sku:   stock.Sku,
 			Delta: stock.Count,
 		})
 	}
 
-	reservationIds, err := s.ProductService.ReserveCount(ctx, products)
+	reservationIds, err := s.svc.Reserve(ctx, products)
 	if err != nil {
 		return nil, fmt.Errorf("GrpcService.ReserveProduct: %w", err)
 	}
@@ -105,7 +105,7 @@ func (s *GrpcService) ReleaseReservation(
 		return nil, status.Errorf(codes.InvalidArgument, "reservation_ids must not be empty")
 	}
 
-	if err := s.ProductService.ReleaseReservationByIds(ctx, request.ReservationIds); err != nil {
+	if err := s.svc.ReleaseReservations(ctx, request.ReservationIds); err != nil {
 		return nil, fmt.Errorf("GrpcService.ReleaseReservation: %w", err)
 	}
 
@@ -119,7 +119,7 @@ func (s *GrpcService) ConfirmReservation(
 		return nil, status.Errorf(codes.InvalidArgument, "reservation_ids must not be empty")
 	}
 
-	if err := s.ProductService.ConfirmReservationByIds(ctx, request.ReservationIds); err != nil {
+	if err := s.svc.ConfirmReservations(ctx, request.ReservationIds); err != nil {
 		return nil, fmt.Errorf("GrpcService.ConfirmReservation: %w", err)
 	}
 

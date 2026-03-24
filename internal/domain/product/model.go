@@ -1,4 +1,4 @@
-package model
+package product
 
 type Product struct {
 	Sku           uint64
