@@ -8,7 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/reservation"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
 )
 
 type ReservationMetrics interface {
@@ -42,19 +42,19 @@ func (r *ReservationPgxRepository) conn() dbConn {
 	return r.pool
 }
 
-func (r *ReservationPgxRepository) Insert(ctx context.Context, sku uint64, count uint32) (reservation.Reservation, error) {
+func (r *ReservationPgxRepository) Insert(ctx context.Context, sku uint64, count uint32) (models.Reservation, error) {
 	const query = `
 INSERT INTO reservations (sku, count)
 VALUES ($1, $2)
 RETURNING id, sku, count, created_at`
 
-	var rv reservation.Reservation
+	var rv models.Reservation
 	var skuInt int64
 	var countInt int32
 	err := r.conn().QueryRow(ctx, query, int64(sku), int32(count)).Scan(&rv.Id, &skuInt, &countInt, &rv.CreatedAt)
 	if err != nil {
 		r.metrics.ReportRequest("InsertReservation", "error")
-		return reservation.Reservation{}, fmt.Errorf("PgxRepository.Insert: %w", err)
+		return models.Reservation{}, fmt.Errorf("PgxRepository.Insert: %w", err)
 	}
 	rv.Sku = uint64(skuInt)
 	rv.Count = uint32(countInt)
@@ -63,7 +63,7 @@ RETURNING id, sku, count, created_at`
 	return rv, nil
 }
 
-func (r *ReservationPgxRepository) GetByIds(ctx context.Context, ids []int64) ([]reservation.Reservation, error) {
+func (r *ReservationPgxRepository) GetByIds(ctx context.Context, ids []int64) ([]models.Reservation, error) {
 	const query = `
 SELECT id, sku, count, created_at
 FROM reservations
@@ -76,9 +76,9 @@ WHERE id = ANY($1)`
 	}
 	defer rows.Close()
 
-	var result []reservation.Reservation
+	var result []models.Reservation
 	for rows.Next() {
-		var rv reservation.Reservation
+		var rv models.Reservation
 		var sku int64
 		var count int32
 		if err = rows.Scan(&rv.Id, &sku, &count, &rv.CreatedAt); err != nil {
@@ -107,7 +107,7 @@ func (r *ReservationPgxRepository) DeleteByIds(ctx context.Context, ids []int64)
 	return nil
 }
 
-func (r *ReservationPgxRepository) GetExpired(ctx context.Context, cutoff time.Time) ([]reservation.Reservation, error) {
+func (r *ReservationPgxRepository) GetExpired(ctx context.Context, cutoff time.Time) ([]models.Reservation, error) {
 	const query = `
 SELECT id, sku, count, created_at
 FROM reservations
@@ -120,9 +120,9 @@ WHERE created_at < $1`
 	}
 	defer rows.Close()
 
-	var result []reservation.Reservation
+	var result []models.Reservation
 	for rows.Next() {
-		var rv reservation.Reservation
+		var rv models.Reservation
 		var sku int64
 		var count int32
 		if err = rows.Scan(&rv.Id, &sku, &count, &rv.CreatedAt); err != nil {

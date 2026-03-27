@@ -6,18 +6,18 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/product"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/reservation"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/services"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/kafka"
 )
 
 type ReservationRepository interface {
-	GetExpired(ctx context.Context, cutoff time.Time) ([]reservation.Reservation, error)
+	GetExpired(ctx context.Context, cutoff time.Time) ([]models.Reservation, error)
 	DeleteByIds(ctx context.Context, ids []int64) error
 }
 
 type ProductService interface {
-	ReleaseReservation(ctx context.Context, products []product.UpdateCount) error
+	ReleaseReservation(ctx context.Context, products []services.UpdateCount) error
 }
 
 type ReservationExpiryJob struct {
@@ -76,9 +76,9 @@ func (j *ReservationExpiryJob) tick(ctx context.Context) error {
 		grouped[r.Sku] += r.Count
 	}
 
-	products := make([]product.UpdateCount, 0, len(grouped))
+	products := make([]services.UpdateCount, 0, len(grouped))
 	for sku, count := range grouped {
-		products = append(products, product.UpdateCount{Sku: sku, Delta: count})
+		products = append(products, services.UpdateCount{Sku: sku, Delta: count})
 	}
 
 	if err = j.productService.ReleaseReservation(ctx, products); err != nil {

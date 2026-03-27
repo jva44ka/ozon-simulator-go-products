@@ -1,4 +1,4 @@
-package product
+package services
 
 import (
 	"context"
@@ -6,34 +6,21 @@ import (
 	"maps"
 	"slices"
 
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain"
 	domainErrors "github.com/jva44ka/ozon-simulator-go-products/internal/domain/errors"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/reservation"
 )
 
-type ProductRepository interface {
-	GetProductBySku(ctx context.Context, sku uint64) (*models.Product, error)
-	GetProductsBySkus(ctx context.Context, skus []uint64) ([]*models.Product, error)
-	UpdateCount(ctx context.Context, products []*models.Product) error
-}
-
-type ReservationRepository interface {
-	Insert(ctx context.Context, sku uint64, count uint32) (reservation.Reservation, error)
-	GetByIds(ctx context.Context, ids []int64) ([]reservation.Reservation, error)
-	DeleteByIds(ctx context.Context, ids []int64) error
-}
-
-type Transactor interface {
-	InTransaction(ctx context.Context, fn func(repos Repositories) error) error
-}
-
 type Service struct {
-	productRepository     ProductRepository
-	reservationRepository ReservationRepository
-	transactor            Transactor
+	productRepository     domain.ProductRepository
+	reservationRepository domain.ReservationRepository
+	transactor            domain.Transactor
 }
 
-func NewService(productRepository ProductRepository, reservationRepository ReservationRepository, transactor Transactor) *Service {
+func NewService(
+	productRepository domain.ProductRepository,
+	reservationRepository domain.ReservationRepository,
+	transactor domain.Transactor) *Service {
 	return &Service{
 		productRepository:     productRepository,
 		reservationRepository: reservationRepository,
@@ -72,8 +59,8 @@ func (s *Service) IncreaseCount(ctx context.Context, products []UpdateCount) err
 
 func (s *Service) Reserve(ctx context.Context, products []UpdateCount) (map[uint64]int64, error) {
 	reservationIds := make(map[uint64]int64, len(products))
-	err := s.transactor.InTransaction(ctx, func(repos Repositories) error {
-		existingProductsMap, err := validateProductsExist(ctx, products, repos.Products)
+	err := s.transactor.InTransaction(ctx, func(repos domain.Repositories) error {
+		existingProductsMap, err := validateProductsExist(ctx, products, repos.Products())
 		if err != nil {
 			return err
 		}
@@ -84,11 +71,11 @@ func (s *Service) Reserve(ctx context.Context, products []UpdateCount) (map[uint
 			}
 			existingProduct.Count -= product.Delta
 		}
-		if err = repos.Products.UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
+		if err = repos.Products().UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
 			return fmt.Errorf("ProductService.Reserve: %w", err)
 		}
 		for _, p := range products {
-			rv, err := repos.Reservations.Insert(ctx, p.Sku, p.Delta)
+			rv, err := repos.Reservations().Insert(ctx, p.Sku, p.Delta)
 			if err != nil {
 				return fmt.Errorf("ProductService.Reserve: %w", err)
 			}
@@ -103,8 +90,8 @@ func (s *Service) Reserve(ctx context.Context, products []UpdateCount) (map[uint
 }
 
 func (s *Service) ReleaseReservations(ctx context.Context, ids []int64) error {
-	return s.transactor.InTransaction(ctx, func(repos Repositories) error {
-		reservations, err := repos.Reservations.GetByIds(ctx, ids)
+	return s.transactor.InTransaction(ctx, func(repos domain.Repositories) error {
+		reservations, err := repos.Reservations().GetByIds(ctx, ids)
 		if err != nil {
 			return fmt.Errorf("ProductService.ReleaseReservations: %w", err)
 		}
@@ -112,17 +99,17 @@ func (s *Service) ReleaseReservations(ctx context.Context, ids []int64) error {
 		for i, r := range reservations {
 			products[i] = UpdateCount{Sku: r.Sku, Delta: r.Count}
 		}
-		existingProductsMap, err := validateProductsExist(ctx, products, repos.Products)
+		existingProductsMap, err := validateProductsExist(ctx, products, repos.Products())
 		if err != nil {
 			return err
 		}
 		for _, p := range products {
 			existingProductsMap[p.Sku].Count += p.Delta
 		}
-		if err = repos.Products.UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
+		if err = repos.Products().UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
 			return err
 		}
-		return repos.Reservations.DeleteByIds(ctx, ids)
+		return repos.Reservations().DeleteByIds(ctx, ids)
 	})
 }
 
@@ -130,8 +117,6 @@ func (s *Service) ConfirmReservations(ctx context.Context, ids []int64) error {
 	return s.reservationRepository.DeleteByIds(ctx, ids)
 }
 
-// ReleaseReservation используется фоновой джобой — без транзакции,
-// только обновление счётчика товаров.
 func (s *Service) ReleaseReservation(ctx context.Context, products []UpdateCount) error {
 	existingProductsMap, err := validateProductsExist(ctx, products, s.productRepository)
 	if err != nil {
@@ -143,7 +128,7 @@ func (s *Service) ReleaseReservation(ctx context.Context, products []UpdateCount
 	return s.productRepository.UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap)))
 }
 
-func validateProductsExist(ctx context.Context, products []UpdateCount, repo ProductRepository) (map[uint64]*models.Product, error) {
+func validateProductsExist(ctx context.Context, products []UpdateCount, repo domain.ProductRepository) (map[uint64]*models.Product, error) {
 	skus := make([]uint64, 0, len(products))
 	for _, product := range products {
 		skus = append(skus, product.Sku)

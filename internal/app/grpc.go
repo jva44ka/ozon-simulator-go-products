@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	pb "github.com/jva44ka/ozon-simulator-go-products/internal/app/gen/ozon-simulator-go-products/api/v1/proto"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/product"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/services"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,10 +14,10 @@ var _ pb.ProductsServer = (*GrpcService)(nil)
 
 type GrpcService struct {
 	pb.UnimplementedProductsServer
-	svc product.Service
+	svc services.Service
 }
 
-func NewGrpcService(svc *product.Service) *GrpcService {
+func NewGrpcService(svc *services.Service) *GrpcService {
 	return &GrpcService{svc: *svc}
 }
 
@@ -46,12 +46,12 @@ func (s *GrpcService) IncreaseProductCount(
 		return nil, status.Errorf(codes.InvalidArgument, "products must not be empty")
 	}
 
-	products := make([]product.UpdateCount, 0, len(request.Products))
+	products := make([]services.UpdateCount, 0, len(request.Products))
 	for _, stock := range request.Products {
 		if stock.Sku < 1 {
 			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 		}
-		products = append(products, product.UpdateCount{
+		products = append(products, services.UpdateCount{
 			Sku:   stock.Sku,
 			Delta: stock.Count,
 		})
@@ -71,12 +71,12 @@ func (s *GrpcService) ReserveProduct(
 		return nil, status.Errorf(codes.InvalidArgument, "products must not be empty")
 	}
 
-	products := make([]product.UpdateCount, 0, len(request.Products))
+	products := make([]services.UpdateCount, 0, len(request.Products))
 	for _, stock := range request.Products {
 		if stock.Sku < 1 {
 			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 		}
-		products = append(products, product.UpdateCount{
+		products = append(products, services.UpdateCount{
 			Sku:   stock.Sku,
 			Delta: stock.Count,
 		})

@@ -5,18 +5,13 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/product"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/domain"
 )
 
 type Transactor struct {
 	pool               *pgxpool.Pool
 	productMetrics     RepositoryMetrics
 	reservationMetrics ReservationMetrics
-}
-
-type Repositories struct {
-	Products     product.ProductRepository
-	Reservations product.ReservationRepository
 }
 
 func NewTransactor(pool *pgxpool.Pool, productMetrics RepositoryMetrics, reservationMetrics ReservationMetrics) *Transactor {
@@ -27,12 +22,19 @@ func NewTransactor(pool *pgxpool.Pool, productMetrics RepositoryMetrics, reserva
 	}
 }
 
-func (t *Transactor) InTransaction(ctx context.Context, fn func(repos Repositories) error) error {
+type repositories struct {
+	products     domain.ProductRepository
+	reservations domain.ReservationRepository
+}
+
+func (r repositories) Products() domain.ProductRepository     { return r.products }
+func (r repositories) Reservations() domain.ReservationRepository { return r.reservations }
+
+func (t *Transactor) InTransaction(ctx context.Context, fn func(repos domain.Repositories) error) error {
 	return pgx.BeginTxFunc(ctx, t.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
-		repos := Repositories{
-			Products:     NewProductTxPgxRepository(tx, t.productMetrics),
-			Reservations: NewReservationTxPgxRepository(tx, t.reservationMetrics),
-		}
-		return fn(repos)
+		return fn(repositories{
+			products:     NewProductTxPgxRepository(tx, t.productMetrics),
+			reservations: NewReservationTxPgxRepository(tx, t.reservationMetrics),
+		})
 	})
 }
