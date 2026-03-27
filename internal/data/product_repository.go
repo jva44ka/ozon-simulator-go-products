@@ -6,7 +6,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/postgres"
 )
 
 type RepositoryMetrics interface {
@@ -14,13 +13,18 @@ type RepositoryMetrics interface {
 	ReportOptimisticLockFailure()
 }
 
-type ProductRepository struct {
+type ProductPgxRepository struct {
 	pool    *pgxpool.Pool
+	tx      pgx.Tx
 	metrics RepositoryMetrics
 }
 
-func NewPgxRepository(pool *pgxpool.Pool, metrics RepositoryMetrics) *ProductRepository {
-	return &ProductRepository{pool: pool, metrics: metrics}
+func NewPgxRepository(pool *pgxpool.Pool, metrics RepositoryMetrics) *ProductPgxRepository {
+	return &ProductPgxRepository{pool: pool, metrics: metrics}
+}
+
+func NewTxPgxRepository(tx pgx.Tx, metrics RepositoryMetrics) *ProductPgxRepository {
+	return &ProductPgxRepository{tx: tx, metrics: metrics}
 }
 
 type productRow struct {
@@ -31,19 +35,18 @@ type productRow struct {
 	xmin  uint32
 }
 
-// rowQuerier — минимальный интерфейс для SELECT-запросов.
 type rowQuerier interface {
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
-func (r *ProductRepository) querier(ctx context.Context) rowQuerier {
-	if tx, ok := postgres.TxFromContext(ctx); ok {
-		return tx
+func (r *ProductPgxRepository) conn() rowQuerier {
+	if r.tx != nil {
+		return r.tx
 	}
 	return r.pool
 }
 
-func (r *ProductRepository) GetProductBySku(ctx context.Context, sku uint64) (*Product, error) {
+func (r *ProductPgxRepository) GetProductBySku(ctx context.Context, sku uint64) (*Product, error) {
 	products, err := r.GetProductsBySkus(ctx, []uint64{sku})
 	if err != nil {
 		return nil, err
@@ -54,13 +57,13 @@ func (r *ProductRepository) GetProductBySku(ctx context.Context, sku uint64) (*P
 	return products[0], nil
 }
 
-func (r *ProductRepository) GetProductsBySkus(ctx context.Context, skus []uint64) ([]*Product, error) {
+func (r *ProductPgxRepository) GetProductsBySkus(ctx context.Context, skus []uint64) ([]*Product, error) {
 	const query = `
 SELECT sku, price, name, count, xmin
 FROM products
 WHERE sku = ANY($1);`
 
-	rows, err := r.querier(ctx).Query(ctx, query, skus)
+	rows, err := r.conn().Query(ctx, query, skus)
 	if err != nil {
 		r.metrics.ReportRequest("GetProductsBySkus", "error")
 		return nil, fmt.Errorf("ProductRepository.GetProductsBySkus: %w", err)
@@ -87,7 +90,7 @@ WHERE sku = ANY($1);`
 	return products, nil
 }
 
-func (r *ProductRepository) UpdateCount(ctx context.Context, products []*Product) error {
+func (r *ProductPgxRepository) UpdateCount(ctx context.Context, products []*Product) error {
 	const query = `
 UPDATE products
 SET count = $3
@@ -98,7 +101,7 @@ WHERE sku = $1 AND xmin = $2;`
 	})
 }
 
-func (r *ProductRepository) execBatch(
+func (r *ProductPgxRepository) execBatch(
 	ctx context.Context,
 	method string,
 	products []*Product,
@@ -133,8 +136,8 @@ func (r *ProductRepository) execBatch(
 		return nil
 	}
 
-	if tx, ok := postgres.TxFromContext(ctx); ok {
-		return do(tx)
+	if r.tx != nil {
+		return do(r.tx)
 	}
 	return pgx.BeginTxFunc(ctx, r.pool, pgx.TxOptions{}, do)
 }

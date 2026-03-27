@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/postgres"
 )
 
 type Metrics interface {
@@ -17,6 +16,7 @@ type Metrics interface {
 
 type PgxRepository struct {
 	pool    *pgxpool.Pool
+	tx      pgx.Tx
 	metrics Metrics
 }
 
@@ -24,15 +24,19 @@ func NewPgxRepository(pool *pgxpool.Pool, metrics Metrics) *PgxRepository {
 	return &PgxRepository{pool: pool, metrics: metrics}
 }
 
-type querier interface {
+func NewTxPgxRepository(tx pgx.Tx, metrics Metrics) *PgxRepository {
+	return &PgxRepository{tx: tx, metrics: metrics}
+}
+
+type dbConn interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
 }
 
-func (r *PgxRepository) querier(ctx context.Context) querier {
-	if tx, ok := postgres.TxFromContext(ctx); ok {
-		return tx
+func (r *PgxRepository) conn() dbConn {
+	if r.tx != nil {
+		return r.tx
 	}
 	return r.pool
 }
@@ -46,7 +50,7 @@ RETURNING id, sku, count, created_at`
 	var rv Reservation
 	var skuInt int64
 	var countInt int32
-	err := r.querier(ctx).QueryRow(ctx, query, int64(sku), int32(count)).Scan(&rv.Id, &skuInt, &countInt, &rv.CreatedAt)
+	err := r.conn().QueryRow(ctx, query, int64(sku), int32(count)).Scan(&rv.Id, &skuInt, &countInt, &rv.CreatedAt)
 	if err != nil {
 		r.metrics.ReportRequest("InsertReservation", "error")
 		return Reservation{}, fmt.Errorf("PgxRepository.Insert: %w", err)
@@ -64,7 +68,7 @@ SELECT id, sku, count, created_at
 FROM reservations
 WHERE id = ANY($1)`
 
-	rows, err := r.querier(ctx).Query(ctx, query, ids)
+	rows, err := r.conn().Query(ctx, query, ids)
 	if err != nil {
 		r.metrics.ReportRequest("GetReservationsByIds", "error")
 		return nil, fmt.Errorf("PgxRepository.GetByIds: %w", err)
@@ -92,7 +96,7 @@ WHERE id = ANY($1)`
 func (r *PgxRepository) DeleteByIds(ctx context.Context, ids []int64) error {
 	const query = `DELETE FROM reservations WHERE id = ANY($1)`
 
-	_, err := r.querier(ctx).Exec(ctx, query, ids)
+	_, err := r.conn().Exec(ctx, query, ids)
 	if err != nil {
 		r.metrics.ReportRequest("DeleteReservationsByIds", "error")
 		return fmt.Errorf("PgxRepository.DeleteByIds: %w", err)

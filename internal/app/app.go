@@ -63,7 +63,7 @@ func NewApp(cfg *config.Config) (*App, error) {
 	reservationRepo := reservation.NewPgxRepository(pool, dbMetrics)
 	producer := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.ReservationExpiredTopic)
 
-	transactor := postgres.NewTransactor(pool)
+	transactor := postgres.NewTransactor(pool, dbMetrics, dbMetrics)
 	domainService := product.NewService(productRepo, reservationRepo, transactor)
 	expiryJob := jobs.NewReservationExpiryJob(reservationRepo, domainService, producer, reservationTTL, jobInterval)
 
