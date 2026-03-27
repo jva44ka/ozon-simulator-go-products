@@ -27,14 +27,19 @@ type repositories struct {
 	reservations domain.ReservationRepository
 }
 
-func (r repositories) Products() domain.ProductRepository     { return r.products }
-func (r repositories) Reservations() domain.ReservationRepository { return r.reservations }
+func (r repositories) Products() domain.ProductRepository {
+	return r.products
+}
+
+func (r repositories) Reservations() domain.ReservationRepository {
+	return r.reservations
+}
 
 func (t *Transactor) InTransaction(ctx context.Context, fn func(repos domain.Repositories) error) error {
 	return pgx.BeginTxFunc(ctx, t.pool, pgx.TxOptions{}, func(tx pgx.Tx) error {
 		return fn(repositories{
-			products:     NewProductTxPgxRepository(tx, t.productMetrics),
-			reservations: NewReservationTxPgxRepository(tx, t.reservationMetrics),
+			products:     NewProductPgxRepository(tx, t.productMetrics),
+			reservations: NewReservationPgxRepository(tx, t.reservationMetrics),
 		})
 	})
 }

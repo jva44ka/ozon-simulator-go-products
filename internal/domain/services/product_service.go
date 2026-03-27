@@ -58,20 +58,22 @@ func (s *Service) IncreaseCount(ctx context.Context, products []UpdateCount) err
 }
 
 func (s *Service) Reserve(ctx context.Context, products []UpdateCount) (map[uint64]int64, error) {
+	// Читаем до транзакции: xmin нужен для оптимистичной блокировки при UPDATE
+	existingProductsMap, err := validateProductsExist(ctx, products, s.productRepository)
+	if err != nil {
+		return nil, err
+	}
+	for _, product := range products {
+		existingProduct := existingProductsMap[product.Sku]
+		if existingProduct.Count < product.Delta {
+			return nil, domainErrors.NewInsufficientProductError(product.Sku, existingProduct.Count, product.Delta)
+		}
+		existingProduct.Count -= product.Delta
+	}
+
 	reservationIds := make(map[uint64]int64, len(products))
-	err := s.transactor.InTransaction(ctx, func(repos domain.Repositories) error {
-		existingProductsMap, err := validateProductsExist(ctx, products, repos.Products())
-		if err != nil {
-			return err
-		}
-		for _, product := range products {
-			existingProduct := existingProductsMap[product.Sku]
-			if existingProduct.Count < product.Delta {
-				return domainErrors.NewInsufficientProductError(product.Sku, existingProduct.Count, product.Delta)
-			}
-			existingProduct.Count -= product.Delta
-		}
-		if err = repos.Products().UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
+	err = s.transactor.InTransaction(ctx, func(repos domain.Repositories) error {
+		if err := repos.Products().UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
 			return fmt.Errorf("ProductService.Reserve: %w", err)
 		}
 		for _, p := range products {
@@ -90,22 +92,23 @@ func (s *Service) Reserve(ctx context.Context, products []UpdateCount) (map[uint
 }
 
 func (s *Service) ReleaseReservations(ctx context.Context, ids []int64) error {
+	reservations, err := s.reservationRepository.GetByIds(ctx, ids)
+	if err != nil {
+		return fmt.Errorf("ProductService.ReleaseReservations: %w", err)
+	}
+	products := make([]UpdateCount, len(reservations))
+	for i, r := range reservations {
+		products[i] = UpdateCount{Sku: r.Sku, Delta: r.Count}
+	}
+	existingProductsMap, err := validateProductsExist(ctx, products, s.productRepository)
+	if err != nil {
+		return err
+	}
+	for _, p := range products {
+		existingProductsMap[p.Sku].Count += p.Delta
+	}
+
 	return s.transactor.InTransaction(ctx, func(repos domain.Repositories) error {
-		reservations, err := repos.Reservations().GetByIds(ctx, ids)
-		if err != nil {
-			return fmt.Errorf("ProductService.ReleaseReservations: %w", err)
-		}
-		products := make([]UpdateCount, len(reservations))
-		for i, r := range reservations {
-			products[i] = UpdateCount{Sku: r.Sku, Delta: r.Count}
-		}
-		existingProductsMap, err := validateProductsExist(ctx, products, repos.Products())
-		if err != nil {
-			return err
-		}
-		for _, p := range products {
-			existingProductsMap[p.Sku].Count += p.Delta
-		}
 		if err = repos.Products().UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
 			return err
 		}

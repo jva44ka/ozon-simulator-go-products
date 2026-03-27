@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
 )
 
@@ -14,18 +14,20 @@ type RepositoryMetrics interface {
 	ReportOptimisticLockFailure()
 }
 
+type Connection interface {
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, args ...any) (pgconn.CommandTag, error)
+	SendBatch(ctx context.Context, b *pgx.Batch) pgx.BatchResults
+}
+
 type ProductPgxRepository struct {
-	pool    *pgxpool.Pool
-	tx      pgx.Tx
-	metrics RepositoryMetrics
+	connection Connection
+	metrics    RepositoryMetrics
 }
 
-func NewProductPgxRepository(pool *pgxpool.Pool, metrics RepositoryMetrics) *ProductPgxRepository {
-	return &ProductPgxRepository{pool: pool, metrics: metrics}
-}
-
-func NewProductTxPgxRepository(tx pgx.Tx, metrics RepositoryMetrics) *ProductPgxRepository {
-	return &ProductPgxRepository{tx: tx, metrics: metrics}
+func NewProductPgxRepository(connection Connection, metrics RepositoryMetrics) *ProductPgxRepository {
+	return &ProductPgxRepository{connection: connection, metrics: metrics}
 }
 
 type productRow struct {
@@ -34,17 +36,6 @@ type productRow struct {
 	name  string
 	count uint32
 	xmin  uint32
-}
-
-type rowQuerier interface {
-	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
-}
-
-func (r *ProductPgxRepository) conn() rowQuerier {
-	if r.tx != nil {
-		return r.tx
-	}
-	return r.pool
 }
 
 func (r *ProductPgxRepository) GetProductBySku(ctx context.Context, sku uint64) (*models.Product, error) {
@@ -64,7 +55,7 @@ SELECT sku, price, name, count, xmin
 FROM products
 WHERE sku = ANY($1);`
 
-	rows, err := r.conn().Query(ctx, query, skus)
+	rows, err := r.connection.Query(ctx, query, skus)
 	if err != nil {
 		r.metrics.ReportRequest("GetProductsBySkus", "error")
 		return nil, fmt.Errorf("ProductRepository.GetProductsBySkus: %w", err)
@@ -109,36 +100,29 @@ func (r *ProductPgxRepository) execBatch(
 	query string,
 	args func(*models.Product) []any,
 ) error {
-	do := func(tx pgx.Tx) error {
-		batch := &pgx.Batch{}
-		for _, p := range products {
-			batch.Queue(query, args(p)...)
-		}
-
-		results := tx.SendBatch(ctx, batch)
-		defer results.Close()
-
-		var affected int64
-		for range products {
-			tag, err := results.Exec()
-			if err != nil {
-				return fmt.Errorf("ProductRepository.%s: %w", method, err)
-			}
-			affected += tag.RowsAffected()
-		}
-
-		if affected != int64(len(products)) {
-			r.metrics.ReportRequest(method, "error")
-			r.metrics.ReportOptimisticLockFailure()
-			return fmt.Errorf("ProductRepository.%s: optimistic lock failed, retry required", method)
-		}
-
-		r.metrics.ReportRequest(method, "success")
-		return nil
+	batch := &pgx.Batch{}
+	for _, p := range products {
+		batch.Queue(query, args(p)...)
 	}
 
-	if r.tx != nil {
-		return do(r.tx)
+	results := r.connection.SendBatch(ctx, batch)
+	defer results.Close()
+
+	var affected int64
+	for range products {
+		tag, err := results.Exec()
+		if err != nil {
+			return fmt.Errorf("ProductRepository.%s: %w", method, err)
+		}
+		affected += tag.RowsAffected()
 	}
-	return pgx.BeginTxFunc(ctx, r.pool, pgx.TxOptions{}, do)
+
+	if affected != int64(len(products)) {
+		r.metrics.ReportRequest(method, "error")
+		r.metrics.ReportOptimisticLockFailure()
+		return fmt.Errorf("ProductRepository.%s: optimistic lock failed, retry required", method)
+	}
+
+	r.metrics.ReportRequest(method, "success")
+	return nil
 }
