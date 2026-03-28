@@ -54,6 +54,7 @@ func (s *Service) Reserve(ctx context.Context, products []UpdateCount) (map[uint
 	if err != nil {
 		return nil, err
 	}
+
 	for _, product := range products {
 		existingProduct := existingProductsMap[product.Sku]
 		if existingProduct.Count < product.Delta {
@@ -64,20 +65,25 @@ func (s *Service) Reserve(ctx context.Context, products []UpdateCount) (map[uint
 
 	reservationIds := make(map[uint64]int64, len(products))
 	err = s.db.InTransaction(ctx, func(tx pgx.Tx) error {
-		if err := s.db.Products().WithTx(tx).UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
+		if err = s.db.Products().WithTx(tx).UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
 			return fmt.Errorf("ProductService.Reserve: %w", err)
 		}
-		for _, p := range products {
-			rv, err := s.db.Reservations().WithTx(tx).Insert(ctx, p.Sku, p.Delta)
+
+		var reservation models.Reservation
+		reservationRepo := s.db.Reservations().WithTx(tx)
+
+		for _, product := range products {
+			reservation, err = reservationRepo.Insert(ctx, product.Sku, product.Delta)
 			if err != nil {
 				return fmt.Errorf("ProductService.Reserve: %w", err)
 			}
-			reservationIds[p.Sku] = rv.Id
+			reservationIds[product.Sku] = reservation.Id
 		}
+
 		return nil
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("ProductService.Reserve: %w", err)
 	}
 	return reservationIds, nil
 }
@@ -100,7 +106,7 @@ func (s *Service) ReleaseReservations(ctx context.Context, ids []int64) error {
 	}
 
 	return s.db.InTransaction(ctx, func(tx pgx.Tx) error {
-		if err := s.db.Products().WithTx(tx).UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
+		if err = s.db.Products().WithTx(tx).UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap))); err != nil {
 			return err
 		}
 		return s.db.Reservations().WithTx(tx).DeleteByIds(ctx, ids)
