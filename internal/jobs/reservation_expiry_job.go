@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/kafka"
 )
 
 type ReservationRepository interface {
@@ -18,10 +17,14 @@ type ProductService interface {
 	ReleaseReservations(ctx context.Context, ids []int64) error
 }
 
+type KafkaProducer interface {
+	PublishReservationExpired(ctx context.Context, id int64, sku uint64, count uint32) error
+}
+
 type ReservationExpiryJob struct {
 	reservationRepo ReservationRepository
 	productService  ProductService
-	producer        *kafka.Producer
+	producer        KafkaProducer
 	reservationTTL  time.Duration
 	interval        time.Duration
 }
@@ -29,7 +32,7 @@ type ReservationExpiryJob struct {
 func NewReservationExpiryJob(
 	reservationRepo ReservationRepository,
 	productService ProductService,
-	producer *kafka.Producer,
+	producer KafkaProducer,
 	reservationTTL time.Duration,
 	interval time.Duration,
 ) *ReservationExpiryJob {
