@@ -31,8 +31,8 @@ func NewProducer(brokers []string, topic string) *Producer {
 func (p *Producer) PublishReservationExpired(ctx context.Context, id int64, sku uint64, count uint32) error {
 	event := ReservationExpiredEvent{
 		ReservationId: id,
-		Sku:           sku,
-		Count:         count,
+		Sku:           sku,   //поле содержится в сообщении исключительно для инфы
+		Count:         count, //поле содержится в сообщении исключительно для инфы
 	}
 
 	data, err := json.Marshal(event)

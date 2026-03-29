@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain"
 	domainErrors "github.com/jva44ka/ozon-simulator-go-products/internal/domain/errors"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
+	models2 "github.com/jva44ka/ozon-simulator-go-products/internal/models"
 )
 
 type Service struct {
@@ -25,7 +25,7 @@ type UpdateCount struct {
 	Delta uint32
 }
 
-func (s *Service) GetProductBySku(ctx context.Context, sku uint64) (*models.Product, error) {
+func (s *Service) GetProductBySku(ctx context.Context, sku uint64) (*models2.Product, error) {
 	product, err := s.db.Products().GetProductBySku(ctx, sku)
 	if err != nil {
 		return nil, fmt.Errorf("productRepository.GetProductBySku: %w", err)
@@ -69,7 +69,7 @@ func (s *Service) Reserve(ctx context.Context, products []UpdateCount) (map[uint
 			return fmt.Errorf("ProductService.Reserve: %w", err)
 		}
 
-		var reservation models.Reservation
+		var reservation models2.Reservation
 		reservationRepo := s.db.Reservations().WithTx(tx)
 
 		for _, product := range products {
@@ -126,7 +126,7 @@ func (s *Service) ConfirmReservations(ctx context.Context, ids []int64) error {
 func validateProductsExist(
 	ctx context.Context,
 	products []UpdateCount,
-	repo domain.ProductReadRepository) (map[uint64]*models.Product, error) {
+	repo domain.ProductReadRepository) (map[uint64]*models2.Product, error) {
 	skus := make([]uint64, 0, len(products))
 	for _, product := range products {
 		skus = append(skus, product.Sku)
@@ -137,7 +137,7 @@ func validateProductsExist(
 		return nil, fmt.Errorf("ProductService.validateProductsExist: %w", err)
 	}
 
-	existingProductsMap := make(map[uint64]*models.Product, len(existingProducts))
+	existingProductsMap := make(map[uint64]*models2.Product, len(existingProducts))
 	for _, existingProduct := range existingProducts {
 		existingProductsMap[existingProduct.Sku] = existingProduct
 	}

@@ -1,4 +1,4 @@
-package data
+package database
 
 import (
 	"context"
@@ -6,19 +6,20 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/database/repositories"
 )
 
 type DBManager struct {
 	pool         *pgxpool.Pool
-	products     *ProductPgxRepository
-	reservations *ReservationPgxRepository
+	products     *repositories.ProductPgxRepository
+	reservations *repositories.ReservationPgxRepository
 }
 
-func NewDBManager(pool *pgxpool.Pool, productMetrics RepositoryMetrics, reservationMetrics ReservationMetrics) *DBManager {
+func NewDBManager(pool *pgxpool.Pool, productMetrics repositories.RepositoryMetrics, reservationMetrics repositories.ReservationMetrics) *DBManager {
 	return &DBManager{
 		pool:         pool,
-		products:     NewProductPgxRepository(pool, productMetrics),
-		reservations: NewReservationPgxRepository(pool, reservationMetrics),
+		products:     repositories.NewProductPgxRepository(pool, productMetrics),
+		reservations: repositories.NewReservationPgxRepository(pool, reservationMetrics),
 	}
 }
 
@@ -30,7 +31,7 @@ func (m *DBManager) Reservations() domain.ReservationReadRepository {
 	return m.reservations
 }
 
-func (m *DBManager) ReservationRepo() *ReservationPgxRepository {
+func (m *DBManager) ReservationRepo() *repositories.ReservationPgxRepository {
 	return m.reservations
 }
 

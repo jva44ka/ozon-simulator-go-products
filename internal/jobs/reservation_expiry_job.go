@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
 )
 
 type ReservationRepository interface {

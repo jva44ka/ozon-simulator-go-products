@@ -12,9 +12,9 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/app/middleware"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/data"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/services"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/config"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/database"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/kafka"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/metrics"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/jobs"
@@ -58,7 +58,7 @@ func NewApp(cfg *config.Config) (*App, error) {
 	}
 
 	dbMetrics := metrics.NewDbMetrics()
-	db := data.NewDBManager(pool, dbMetrics, dbMetrics)
+	db := database.NewDBManager(pool, dbMetrics, dbMetrics)
 	producer := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.ReservationExpiredTopic)
 
 	domainService := services.NewService(db)

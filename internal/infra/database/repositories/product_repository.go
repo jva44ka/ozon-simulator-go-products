@@ -1,4 +1,4 @@
-package data
+package repositories
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
 )
 
 type RepositoryMetrics interface {
@@ -24,13 +24,13 @@ func NewProductPgxRepository(pool *pgxpool.Pool, metrics RepositoryMetrics) *Pro
 	return &ProductPgxRepository{pool: pool, metrics: metrics}
 }
 
-func (r *ProductPgxRepository) WithTx(tx pgx.Tx) domain.ProductWriteRepository {
-	return &ProductPgxTxRepository{tx: tx, metrics: r.metrics}
-}
-
 type ProductPgxTxRepository struct {
 	tx      pgx.Tx
 	metrics RepositoryMetrics
+}
+
+func (r *ProductPgxRepository) WithTx(tx pgx.Tx) domain.ProductWriteRepository {
+	return &ProductPgxTxRepository{tx: tx, metrics: r.metrics}
 }
 
 type productRow struct {

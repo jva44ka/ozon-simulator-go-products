@@ -1,4 +1,4 @@
-package data
+package repositories
 
 import (
 	"context"
@@ -8,14 +8,13 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/domain"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/domain/models"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
 )
 
 type ReservationMetrics interface {
 	ReportRequest(method, status string)
 }
 
-// ReservationPgxRepository — read-only, requires pool
 type ReservationPgxRepository struct {
 	pool    *pgxpool.Pool
 	metrics ReservationMetrics
@@ -25,14 +24,13 @@ func NewReservationPgxRepository(pool *pgxpool.Pool, metrics ReservationMetrics)
 	return &ReservationPgxRepository{pool: pool, metrics: metrics}
 }
 
-func (r *ReservationPgxRepository) WithTx(tx pgx.Tx) domain.ReservationWriteRepository {
-	return &ReservationPgxTxRepository{tx: tx, metrics: r.metrics}
-}
-
-// ReservationPgxTxRepository — write-only, tx always set
 type ReservationPgxTxRepository struct {
 	tx      pgx.Tx
 	metrics ReservationMetrics
+}
+
+func (r *ReservationPgxRepository) WithTx(tx pgx.Tx) domain.ReservationWriteRepository {
+	return &ReservationPgxTxRepository{tx: tx, metrics: r.metrics}
 }
 
 func (r *ReservationPgxTxRepository) Insert(ctx context.Context, sku uint64, count uint32) (models.Reservation, error) {
