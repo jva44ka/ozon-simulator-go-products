@@ -6,6 +6,7 @@ import (
 
 	pb "github.com/jva44ka/ozon-simulator-go-products/internal/app/pb/ozon-simulator-go-products/api/v1/proto"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/services/product"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/services/reservation"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -14,11 +15,12 @@ var _ pb.ProductsServer = (*GrpcService)(nil)
 
 type GrpcService struct {
 	pb.UnimplementedProductsServer
-	svc product.Service
+	svc    product.Service
+	resSvc reservation.Service
 }
 
-func NewGrpcService(svc *product.Service) *GrpcService {
-	return &GrpcService{svc: *svc}
+func NewGrpcService(svc *product.Service, resSvc *reservation.Service) *GrpcService {
+	return &GrpcService{svc: *svc, resSvc: *resSvc}
 }
 
 func (s *GrpcService) GetProduct(ctx context.Context, request *pb.GetProductRequest) (*pb.GetProductResponse, error) {
@@ -71,18 +73,18 @@ func (s *GrpcService) ReserveProduct(
 		return nil, status.Errorf(codes.InvalidArgument, "products must not be empty")
 	}
 
-	products := make([]product.UpdateCount, 0, len(request.Products))
+	items := make([]reservation.ReserveItem, 0, len(request.Products))
 	for _, stock := range request.Products {
 		if stock.Sku < 1 {
 			return nil, status.Errorf(codes.InvalidArgument, "sku must be more than zero")
 		}
-		products = append(products, product.UpdateCount{
+		items = append(items, reservation.ReserveItem{
 			Sku:   stock.Sku,
 			Delta: stock.Count,
 		})
 	}
 
-	reservationIds, err := s.svc.Reserve(ctx, products)
+	reservationIds, err := s.resSvc.Reserve(ctx, items)
 	if err != nil {
 		return nil, fmt.Errorf("GrpcService.ReserveProduct: %w", err)
 	}
@@ -105,7 +107,7 @@ func (s *GrpcService) ReleaseReservation(
 		return nil, status.Errorf(codes.InvalidArgument, "reservation_ids must not be empty")
 	}
 
-	if err := s.svc.ReleaseReservations(ctx, request.ReservationIds); err != nil {
+	if err := s.resSvc.Release(ctx, request.ReservationIds); err != nil {
 		return nil, fmt.Errorf("GrpcService.ReleaseReservation: %w", err)
 	}
 
@@ -119,7 +121,7 @@ func (s *GrpcService) ConfirmReservation(
 		return nil, status.Errorf(codes.InvalidArgument, "reservation_ids must not be empty")
 	}
 
-	if err := s.svc.ConfirmReservations(ctx, request.ReservationIds); err != nil {
+	if err := s.resSvc.Confirm(ctx, request.ReservationIds); err != nil {
 		return nil, fmt.Errorf("GrpcService.ConfirmReservation: %w", err)
 	}
 

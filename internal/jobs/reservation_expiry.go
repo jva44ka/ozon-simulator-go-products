@@ -13,8 +13,8 @@ type ReservationRepository interface {
 	GetExpired(ctx context.Context, cutoff time.Time) ([]models.Reservation, error)
 }
 
-type ProductService interface {
-	ReleaseReservations(ctx context.Context, ids []int64) error
+type ReservationService interface {
+	Release(ctx context.Context, ids []int64) error
 }
 
 type KafkaProducer interface {
@@ -23,7 +23,7 @@ type KafkaProducer interface {
 
 type ReservationExpiryJob struct {
 	reservationRepo ReservationRepository
-	productService  ProductService
+	productService  ReservationService
 	producer        KafkaProducer
 	reservationTTL  time.Duration
 	interval        time.Duration
@@ -31,7 +31,7 @@ type ReservationExpiryJob struct {
 
 func NewReservationExpiryJob(
 	reservationRepo ReservationRepository,
-	productService ProductService,
+	productService ReservationService,
 	producer KafkaProducer,
 	reservationTTL time.Duration,
 	interval time.Duration,
@@ -77,8 +77,8 @@ func (j *ReservationExpiryJob) tick(ctx context.Context) error {
 		ids[i] = r.Id
 	}
 
-	if err = j.productService.ReleaseReservations(ctx, ids); err != nil {
-		return fmt.Errorf("ReleaseReservations: %w", err)
+	if err = j.productService.Release(ctx, ids); err != nil {
+		return fmt.Errorf("Release: %w", err)
 	}
 
 	for _, r := range expired {

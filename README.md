@@ -160,7 +160,6 @@ make docker-push-migrator
 | `products_grpc_requests_total`               | Counter   | Общее количество gRPC-запросов (method, code)|
 | `products_grpc_request_duration_seconds`     | Histogram | Время обработки gRPC-запроса (method)        |
 | `products_db_requests_total`                 | Counter   | Запросы к БД (method, status)                |
-| `products_db_optimistic_lock_failures_total` | Counter   | Количество сбоев оптимистичной блокировки    |
 
 Доступны по адресу `GET /metrics`.
 

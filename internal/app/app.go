@@ -18,6 +18,7 @@ import (
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/metrics"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/jobs"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/services/product"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/services/reservation"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -62,7 +63,8 @@ func NewApp(cfg *config.Config) (*App, error) {
 	producer := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.ReservationExpiredTopic)
 
 	domainService := product.NewService(db)
-	expiryJob := jobs.NewReservationExpiryJob(db.ReservationRepo(), domainService, producer, reservationTTL, jobInterval)
+	reservationService := reservation.NewService(db)
+	expiryJob := jobs.NewReservationExpiryJob(db.ReservationRepo(), reservationService, producer, reservationTTL, jobInterval)
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
@@ -74,7 +76,7 @@ func NewApp(cfg *config.Config) (*App, error) {
 			middleware.Validate,
 		),
 	)
-	grpcService := NewGrpcService(domainService)
+	grpcService := NewGrpcService(domainService, reservationService)
 
 	pb.RegisterProductsServer(grpcServer, grpcService)
 
