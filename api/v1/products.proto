@@ -52,9 +52,23 @@ service Products {
     };
   }
 
-  rpc DecreaseProductCount (DecreaseProductCountRequest) returns (DecreaseProductCountResponse){
+  rpc ReserveProduct (ReserveProductRequest) returns (ReserveProductResponse){
     option (google.api.http) = {
-      post: "/v1/products/decrease-count",
+      post: "/v1/products/reserve",
+      body: "*"
+    };
+  }
+
+  rpc ReleaseReservation (ReleaseReservationRequest) returns (ReleaseReservationResponse){
+    option (google.api.http) = {
+      post: "/v1/products/release-reservation",
+      body: "*"
+    };
+  }
+
+  rpc ConfirmReservation (ConfirmReservationRequest) returns (ConfirmReservationResponse){
+    option (google.api.http) = {
+      post: "/v1/products/confirm-reservation",
       body: "*"
     };
   }
@@ -82,13 +96,32 @@ message IncreaseProductCountRequest {
 
 message IncreaseProductCountResponse {}
 
-message DecreaseProductCountRequest {
-  repeated IncreaseProductCountBatch products = 1;
+message ReserveProductRequest {
+  repeated ProductCountBatch products = 1;
 
-  message IncreaseProductCountBatch {
+  message ProductCountBatch {
     uint64 sku = 1;
     uint32 count = 2;
   }
 }
 
-message DecreaseProductCountResponse {}
+message ReserveProductResponse {
+  repeated ReservationResult results = 1;
+
+  message ReservationResult {
+    int64 reservation_id = 1;
+    uint64 sku = 2;
+  }
+}
+
+message ReleaseReservationRequest {
+  repeated int64 reservation_ids = 1;
+}
+
+message ReleaseReservationResponse {}
+
+message ConfirmReservationRequest {
+  repeated int64 reservation_ids = 1;
+}
+
+message ConfirmReservationResponse {}
