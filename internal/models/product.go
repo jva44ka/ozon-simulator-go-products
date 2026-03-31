@@ -5,5 +5,6 @@ type Product struct {
 	Price         float64
 	Name          string
 	Count         uint32
+	ReservedCount uint32
 	TransactionId uint32
 }

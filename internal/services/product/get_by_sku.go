@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Service) GetBySku(ctx context.Context, sku uint64) (*models.Product, error) {
-	product, err := s.db.Products().GetProductBySku(ctx, sku)
+	product, err := s.db.Products().GetBySku(ctx, sku)
 	if err != nil {
 		return nil, fmt.Errorf("productRepository.GetBySku: %w", err)
 	}

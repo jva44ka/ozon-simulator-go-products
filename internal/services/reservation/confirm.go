@@ -7,7 +7,6 @@ import (
 	"slices"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/errors"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
 )
 
@@ -23,7 +22,7 @@ func (s *Service) Confirm(ctx context.Context, ids []int64) error {
 	}
 
 	skus := slices.Collect(maps.Keys(reservationSumsBySku))
-	products, err := s.db.Products().GetProductsBySkus(ctx, skus)
+	products, err := s.db.Products().GetBySkus(ctx, skus)
 	if err != nil {
 		return fmt.Errorf("ReservationService.Confirm: %w", err)
 	}
@@ -35,14 +34,12 @@ func (s *Service) Confirm(ctx context.Context, ids []int64) error {
 
 	for _, product := range products {
 		delta := reservationSumsBySku[product.Sku]
-		if product.Count < delta {
-			return errors.NewInsufficientProductError(product.Sku, product.Count, delta)
-		}
 		productMap[product.Sku].Count -= delta
+		productMap[product.Sku].ReservedCount -= delta
 	}
 
 	return s.db.InTransaction(ctx, func(tx pgx.Tx) error {
-		if err = s.db.Products().WithTx(tx).UpdateCount(ctx, slices.Collect(maps.Values(productMap))); err != nil {
+		if err = s.db.Products().WithTx(tx).Update(ctx, slices.Collect(maps.Values(productMap))); err != nil {
 			return fmt.Errorf("Confirm: %w", err)
 		}
 		return s.db.Reservations().WithTx(tx).DeleteByIds(ctx, ids)

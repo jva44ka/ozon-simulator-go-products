@@ -31,7 +31,7 @@ func validateProductsExist(
 		skus = append(skus, product.Sku)
 	}
 
-	existingProducts, err := repo.GetProductsBySkus(ctx, skus)
+	existingProducts, err := repo.GetBySkus(ctx, skus)
 	if err != nil {
 		return nil, fmt.Errorf("ProductService.validateProductsExist: %w", err)
 	}

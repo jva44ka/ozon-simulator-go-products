@@ -18,6 +18,6 @@ func (s *Service) IncreaseCount(ctx context.Context, products []UpdateCount) err
 		existingProductsMap[p.Sku].Count += p.Delta
 	}
 	return s.db.InTransaction(ctx, func(tx pgx.Tx) error {
-		return s.db.Products().WithTx(tx).UpdateCount(ctx, slices.Collect(maps.Values(existingProductsMap)))
+		return s.db.Products().WithTx(tx).Update(ctx, slices.Collect(maps.Values(existingProductsMap)))
 	})
 }

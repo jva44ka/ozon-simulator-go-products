@@ -8,13 +8,13 @@ import (
 )
 
 type ProductReadRepository interface {
-	GetProductBySku(ctx context.Context, sku uint64) (*models.Product, error)
-	GetProductsBySkus(ctx context.Context, skus []uint64) ([]*models.Product, error)
+	GetBySku(ctx context.Context, sku uint64) (*models.Product, error)
+	GetBySkus(ctx context.Context, skus []uint64) ([]*models.Product, error)
 	WithTx(tx pgx.Tx) ProductWriteRepository
 }
 
 type ProductWriteRepository interface {
-	UpdateCount(ctx context.Context, products []*models.Product) error
+	Update(ctx context.Context, products []*models.Product) error
 }
 
 type ReservationReadRepository interface {
