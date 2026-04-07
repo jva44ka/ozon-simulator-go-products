@@ -41,8 +41,8 @@ type Config struct {
 	} `yaml:"kafka"`
 
 	Jobs struct {
-		CleanReservationExpired CleanReservationExpired `yaml:"clean-reservation-expired"`
-		ProductEventsOutbox     ProductEventsOutbox     `yaml:"product-events-outbox"`
+		ReservationExpiry   ReservationExpiryConfig   `yaml:"reservation-expiry"`
+		ProductEventsOutbox ProductEventsOutboxConfig `yaml:"product-events-outbox"`
 	} `yaml:"jobs"`
 }
 
@@ -62,13 +62,13 @@ func LoadConfig(filename string) (*Config, error) {
 	return config, nil
 }
 
-type CleanReservationExpired struct {
+type ReservationExpiryConfig struct {
 	Enabled     bool   `yaml:"enabled"`
 	TTL         string `yaml:"ttl"`
 	JobInterval string `yaml:"job-interval"`
 }
 
-type ProductEventsOutbox struct {
+type ProductEventsOutboxConfig struct {
 	Enabled     bool   `yaml:"enabled"`
 	JobInterval string `yaml:"job-interval"`
 	BatchSize   int    `yaml:"batch-size"`

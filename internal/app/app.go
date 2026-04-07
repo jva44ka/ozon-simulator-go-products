@@ -31,8 +31,8 @@ type App struct {
 	grpcServer *grpc.Server
 	httpServer *http.Server
 	cfg        *config.Config
-	expiryJob  *jobs.ReservationExpiryJob
-	outboxJob  *jobs.OutboxPublisherJob
+	reservationExpiryJob    *jobs.ReservationExpiryJob
+	productEventsOutboxJob  *jobs.ProductEventsOutboxJob
 	producer   *kafka.Producer
 }
 
@@ -50,12 +50,12 @@ func NewApp(cfg *config.Config) (*App, error) {
 	}
 
 	//TODO: вынести парсинг опций в конкретные фабричные методы соответствующих сущностей
-	reservationTTL, err := time.ParseDuration(cfg.Jobs.CleanReservationExpired.TTL)
+	reservationTTL, err := time.ParseDuration(cfg.Jobs.ReservationExpiry.TTL)
 	if err != nil {
 		return nil, fmt.Errorf("parse reservation.ttl: %w", err)
 	}
 
-	reservationJobInterval, err := time.ParseDuration(cfg.Jobs.CleanReservationExpired.JobInterval)
+	reservationJobInterval, err := time.ParseDuration(cfg.Jobs.ReservationExpiry.JobInterval)
 	if err != nil {
 		return nil, fmt.Errorf("parse reservation.job-interval: %w", err)
 	}
@@ -72,14 +72,14 @@ func NewApp(cfg *config.Config) (*App, error) {
 	productService := product.NewService(db)
 	reservationService := reservation.NewService(db)
 
-	expiryJob := jobs.NewReservationExpiryJob(
+	reservationExpiryJob := jobs.NewReservationExpiryJob(
 		db.ReservationPgxRepo(),
 		reservationService,
 		reservationTTL,
 		reservationJobInterval,
-		cfg.Jobs.CleanReservationExpired.Enabled)
+		cfg.Jobs.ReservationExpiry.Enabled)
 
-	outboxJob := jobs.NewOutboxPublisherJob(
+	productEventsOutboxJob := jobs.NewProductEventsOutboxJob(
 		db,
 		producer,
 		cfg.Jobs.ProductEventsOutbox.Enabled,
@@ -148,9 +148,9 @@ func NewApp(cfg *config.Config) (*App, error) {
 	return &App{
 		grpcServer: grpcServer,
 		httpServer: httpServer,
-		cfg:        cfg,
-		expiryJob:  expiryJob,
-		outboxJob:  outboxJob,
+		cfg:                    cfg,
+		reservationExpiryJob:   reservationExpiryJob,
+		productEventsOutboxJob: productEventsOutboxJob,
 		producer:   producer,
 	}, nil
 }
@@ -158,12 +158,12 @@ func NewApp(cfg *config.Config) (*App, error) {
 func (a *App) Run(ctx context.Context) error {
 	go func() {
 		slog.Info("starting reservation expiry job")
-		a.expiryJob.Run(ctx)
+		a.reservationExpiryJob.Run(ctx)
 	}()
 
 	go func() {
-		slog.Info("starting outbox_record_builder publisher job")
-		a.outboxJob.Run(ctx)
+		slog.Info("starting product events outbox job")
+		a.productEventsOutboxJob.Run(ctx)
 	}()
 
 	lis, err := net.Listen("tcp", ":"+a.cfg.GrpcServer.Port)

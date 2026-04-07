@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/services/outbox"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/services/product_events_outbox"
 )
 
 func (s *Service) Confirm(ctx context.Context, ids []int64) error {
@@ -36,7 +36,7 @@ func (s *Service) Confirm(ctx context.Context, ids []int64) error {
 	// Копируем old state до изменений
 	//TODO: дубль в products/increase
 	oldState := getProductMapSnapshot(productMap)
-	recordBuilder := outbox.NewProductEventsRecordBuilder(oldState)
+	recordBuilder := product_events_outbox.NewRecordBuilder(oldState)
 
 	for _, product := range products {
 		delta := reservationSumsBySku[product.Sku]

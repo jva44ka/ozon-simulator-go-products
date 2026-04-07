@@ -27,7 +27,7 @@ kafka:
   product-events-topic: product.events
 
 jobs:
-  clean-reservation-expired:
+  reservation-expiry:
     enabled: true
     ttl: 30m
     job-interval: 10m

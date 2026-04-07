@@ -12,7 +12,7 @@ import (
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/kafka"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/services"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/services/outbox"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/services/product_events_outbox"
 )
 
 // TODO: Вынести местную бизнес-логику в сервис, чтобы не было этой зависимости от репозитория
@@ -37,7 +37,7 @@ type OutboxKafkaProducer interface {
 	PublishProductChangedBatch(ctx context.Context, events []kafka.ProductChangedEvent) error
 }
 
-type OutboxPublisherJob struct {
+type ProductEventsOutboxJob struct {
 	db            DBManager
 	producer      OutboxKafkaProducer
 	enabled       bool
@@ -46,15 +46,15 @@ type OutboxPublisherJob struct {
 	maxRetryCount int32
 }
 
-func NewOutboxPublisherJob(
+func NewProductEventsOutboxJob(
 	db DBManager,
 	producer OutboxKafkaProducer,
 	enabled bool,
 	interval time.Duration,
 	batchSize int,
 	maxRetries int32,
-) *OutboxPublisherJob {
-	return &OutboxPublisherJob{
+) *ProductEventsOutboxJob {
+	return &ProductEventsOutboxJob{
 		db:            db,
 		producer:      producer,
 		enabled:       enabled,
@@ -64,9 +64,9 @@ func NewOutboxPublisherJob(
 	}
 }
 
-func (j *OutboxPublisherJob) Run(ctx context.Context) {
+func (j *ProductEventsOutboxJob) Run(ctx context.Context) {
 	if !j.enabled {
-		slog.InfoContext(ctx, "OutboxPublisherJob disabled, shutting down")
+		slog.InfoContext(ctx, "ProductEventsOutboxJob disabled, shutting down")
 	}
 
 	ticker := time.NewTicker(j.interval)
@@ -78,13 +78,13 @@ func (j *OutboxPublisherJob) Run(ctx context.Context) {
 			return
 		case <-ticker.C:
 			if err := j.tick(ctx); err != nil {
-				slog.ErrorContext(ctx, "outbox publisher job failed", "err", err)
+				slog.ErrorContext(ctx, "product events outbox job failed", "err", err)
 			}
 		}
 	}
 }
 
-func (j *OutboxPublisherJob) tick(ctx context.Context) error {
+func (j *ProductEventsOutboxJob) tick(ctx context.Context) error {
 	//TODO добавить метрики
 	//TODO вынести логику обработки аутбокса отдельно от доменного процессинга
 	//TODO сделать обработку паники
@@ -126,14 +126,14 @@ type ProcessBatchResult struct {
 }
 
 // TODO: вынести метод с помощью композиции
-func (j *OutboxPublisherJob) processBatch(ctx context.Context, records []models.ProductEventOutboxRecord) ProcessBatchResult {
+func (j *ProductEventsOutboxJob) processBatch(ctx context.Context, records []models.ProductEventOutboxRecord) ProcessBatchResult {
 	successRecords := make([]uuid.UUID, 0)
 	failedRecordReasons := make(map[uuid.UUID]string)
 	kafkaEvents := make([]kafka.ProductChangedEvent, 0, len(records))
 
 	for _, outboxRecord := range records {
 		//TODO: вынести маппинг
-		var outboxRecordData outbox.ProductEventData
+		var outboxRecordData product_events_outbox.ProductEventData
 		if err := json.Unmarshal(outboxRecord.Data, &outboxRecordData); err != nil {
 			failedRecordReasons[outboxRecord.RecordId] = err.Error()
 			continue
@@ -179,7 +179,7 @@ func (j *OutboxPublisherJob) processBatch(ctx context.Context, records []models.
 	}
 }
 
-func (j *OutboxPublisherJob) markAsDeadLetter(ctx context.Context, recordId uuid.UUID, reason string) {
+func (j *ProductEventsOutboxJob) markAsDeadLetter(ctx context.Context, recordId uuid.UUID, reason string) {
 	//TODO: чето сделать с этой ненужной вложенностью
 	err := j.db.InTransaction(ctx, func(tx pgx.Tx) error {
 		return j.db.ProductEventsOutboxRepo().WithTx(tx).MarkDeadLetter(
@@ -192,7 +192,7 @@ func (j *OutboxPublisherJob) markAsDeadLetter(ctx context.Context, recordId uuid
 	}
 }
 
-func (j *OutboxPublisherJob) incrementRetry(ctx context.Context, recordId uuid.UUID) {
+func (j *ProductEventsOutboxJob) incrementRetry(ctx context.Context, recordId uuid.UUID) {
 	//TODO: чето сделать с этой ненужной вложенностью
 	err := j.db.InTransaction(ctx, func(tx pgx.Tx) error {
 		return j.db.ProductEventsOutboxRepo().WithTx(tx).IncrementRetry(
@@ -204,7 +204,7 @@ func (j *OutboxPublisherJob) incrementRetry(ctx context.Context, recordId uuid.U
 	}
 }
 
-func (j *OutboxPublisherJob) deleteRecords(ctx context.Context, recordIds []uuid.UUID) {
+func (j *ProductEventsOutboxJob) deleteRecords(ctx context.Context, recordIds []uuid.UUID) {
 	//TODO: чето сделать с этой ненужной вложенностью
 	err := j.db.InTransaction(ctx, func(tx pgx.Tx) error {
 		return j.db.ProductEventsOutboxRepo().WithTx(tx).DeleteBatch(

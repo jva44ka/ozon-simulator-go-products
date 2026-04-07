@@ -43,7 +43,7 @@ func NewReservationExpiryJob(
 
 func (j *ReservationExpiryJob) Run(ctx context.Context) {
 	if !j.enabled {
-		slog.InfoContext(ctx, "OutboxPublisherJob disabled, shutting down")
+		slog.InfoContext(ctx, "ReservationExpiryJob disabled, shutting down")
 	}
 
 	ticker := time.NewTicker(j.interval)

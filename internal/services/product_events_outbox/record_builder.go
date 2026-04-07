@@ -1,4 +1,4 @@
-package outbox
+package product_events_outbox
 
 import (
 	"encoding/json"
@@ -21,17 +21,17 @@ type ProductEventData struct {
 	New ProductSnapshot `json:"new"`
 }
 
-type ProductEventsRecordBuilder struct {
+type RecordBuilder struct {
 	oldStates map[uint64]models.Product
 }
 
-func NewProductEventsRecordBuilder(oldStates map[uint64]models.Product) *ProductEventsRecordBuilder {
-	return &ProductEventsRecordBuilder{
+func NewRecordBuilder(oldStates map[uint64]models.Product) *RecordBuilder {
+	return &RecordBuilder{
 		oldStates: oldStates,
 	}
 }
 
-func (s *ProductEventsRecordBuilder) BuildRecords(
+func (s *RecordBuilder) BuildRecords(
 	newStates map[uint64]models.Product) ([]models.ProductEventOutboxRecordNew, error) {
 	if len(s.oldStates) != len(newStates) {
 		return nil, fmt.Errorf("oldStates and newStates are not the same length")
