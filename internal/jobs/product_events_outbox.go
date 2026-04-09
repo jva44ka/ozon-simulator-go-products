@@ -142,9 +142,10 @@ type ProcessBatchResult struct {
 }
 
 // TODO: вынести метод с помощью композиции
-func (j *ProductEventsOutboxJob) processBatch(ctx context.Context, records []models.ProductEventOutboxRecord) ProcessBatchResult {
+func (j *ProductEventsOutboxJob) processBatch(ctx context.Context, records []models.ProductEventOutboxRecord) (result ProcessBatchResult) {
 	successRecords := make([]uuid.UUID, 0)
 	failedRecordReasons := make(map[uuid.UUID]string)
+
 	kafkaEvents := make([]kafka.ProductChangedEvent, 0, len(records))
 
 	for _, outboxRecord := range records {

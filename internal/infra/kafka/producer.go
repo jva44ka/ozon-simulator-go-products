@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/google/uuid"
 	segkafka "github.com/segmentio/kafka-go"
@@ -33,6 +34,8 @@ func NewProducer(brokers []string, topic string) *Producer {
 		writer: &segkafka.Writer{
 			Addr:  segkafka.TCP(brokers...),
 			Topic: topic,
+			//TODO to config
+			WriteTimeout: 10 * time.Second,
 		},
 	}
 }
