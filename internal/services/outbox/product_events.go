@@ -1,4 +1,4 @@
-package record_builders
+package outbox
 
 import (
 	"encoding/json"
@@ -9,17 +9,17 @@ import (
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
 )
 
-type RecordBuilder struct {
+type ProductEventRecordBuilder struct {
 	oldStates map[uint64]models.Product
 }
 
-func NewRecordBuilder(oldStates map[uint64]models.Product) *RecordBuilder {
-	return &RecordBuilder{
+func NewProductEventRecordBuilder(oldStates map[uint64]models.Product) *ProductEventRecordBuilder {
+	return &ProductEventRecordBuilder{
 		oldStates: oldStates,
 	}
 }
 
-func (s *RecordBuilder) BuildRecords(
+func (s *ProductEventRecordBuilder) BuildRecords(
 	newStates map[uint64]models.Product) ([]models.ProductEventOutboxRecordNew, error) {
 	if len(s.oldStates) != len(newStates) {
 		return nil, fmt.Errorf("oldStates and newStates are not the same length")

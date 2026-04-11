@@ -7,8 +7,8 @@ import (
 	"slices"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/database/outbox/record_builders"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/services/outbox"
 )
 
 func (s *Service) IncreaseCount(ctx context.Context, products []UpdateCount) error {
@@ -18,9 +18,9 @@ func (s *Service) IncreaseCount(ctx context.Context, products []UpdateCount) err
 	}
 
 	// Копируем old state до изменений
-	//TODO: дубль в reservations/confirm
+	//TODO: дубль в reservations/release и reservations/reserve
 	oldState := getProductMapSnapshot(existingProductsMap)
-	recordBuilder := record_builders.NewRecordBuilder(oldState)
+	recordBuilder := outbox.NewProductEventRecordBuilder(oldState)
 
 	for _, product := range products {
 		existingProductsMap[product.Sku].Count += product.Delta
