@@ -27,9 +27,10 @@ type Producer[K Key, V any] struct {
 func NewProducer[K Key, V any](brokers []string, topic string, writeTimeout time.Duration) *Producer[K, V] {
 	return &Producer[K, V]{
 		writer: &segkafka.Writer{
-			Addr:         segkafka.TCP(brokers...),
-			Topic:        topic,
-			WriteTimeout: writeTimeout,
+			Addr:                 segkafka.TCP(brokers...),
+			Topic:                topic,
+			WriteTimeout:         writeTimeout,
+			AllowAutoTopicCreation: true,
 		},
 	}
 }
