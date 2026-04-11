@@ -28,11 +28,12 @@ import (
 )
 
 type App struct {
-	grpcServer *grpc.Server
-	httpServer *http.Server
-	cfg        *config.Config
-	job        *jobs.ReservationExpiryJob
-	producer   *kafka.Producer
+	grpcServer             *grpc.Server
+	httpServer             *http.Server
+	cfg                    *config.Config
+	reservationExpiryJob   *jobs.ReservationExpiryJob
+	productEventsOutboxJob *jobs.ProductEventsOutboxJob
+	producer               *kafka.ProductEventsProducer
 }
 
 func NewApp(cfg *config.Config) (*App, error) {
@@ -48,23 +49,48 @@ func NewApp(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("pgxpool.New: %w", err)
 	}
 
-	reservationTTL, err := time.ParseDuration(cfg.Reservation.TTL)
+	//TODO: вынести парсинг опций в конкретные фабричные методы соответствующих сущностей
+	reservationTTL, err := time.ParseDuration(cfg.Jobs.ReservationExpiry.TTL)
 	if err != nil {
 		return nil, fmt.Errorf("parse reservation.ttl: %w", err)
 	}
 
-	jobInterval, err := time.ParseDuration(cfg.Reservation.JobInterval)
+	reservationJobInterval, err := time.ParseDuration(cfg.Jobs.ReservationExpiry.JobInterval)
 	if err != nil {
 		return nil, fmt.Errorf("parse reservation.job-interval: %w", err)
 	}
 
+	outboxJobInterval, err := time.ParseDuration(cfg.Jobs.ProductEventsOutbox.JobInterval)
+	if err != nil {
+		return nil, fmt.Errorf("parse outbox_record_builder.job-interval: %w", err)
+	}
+
+	kafkaWriteTimeout, err := time.ParseDuration(cfg.Kafka.WriteTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("parse kafka.write-timeout: %w", err)
+	}
+
 	dbMetrics := metrics.NewDbMetrics()
 	db := database.NewDBManager(pool, dbMetrics, dbMetrics)
-	producer := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.ReservationExpiredTopic)
+	producer := kafka.NewProductEventsProducer(cfg.Kafka.Brokers, cfg.Kafka.ProductEventsTopic, kafkaWriteTimeout)
 
-	domainService := product.NewService(db)
+	productService := product.NewService(db)
 	reservationService := reservation.NewService(db)
-	expiryJob := jobs.NewReservationExpiryJob(db.ReservationRepo(), reservationService, producer, reservationTTL, jobInterval)
+
+	reservationExpiryJob := jobs.NewReservationExpiryJob(
+		db.ReservationPgxRepo(),
+		reservationService,
+		reservationTTL,
+		reservationJobInterval,
+		cfg.Jobs.ReservationExpiry.Enabled)
+
+	productEventsOutboxJob := jobs.NewProductEventsOutboxJob(
+		db,
+		producer,
+		cfg.Jobs.ProductEventsOutbox.Enabled,
+		outboxJobInterval,
+		cfg.Jobs.ProductEventsOutbox.BatchSize,
+		int32(cfg.Jobs.ProductEventsOutbox.MaxRetries))
 
 	grpcServer := grpc.NewServer(
 		grpc.ChainUnaryInterceptor(
@@ -76,7 +102,7 @@ func NewApp(cfg *config.Config) (*App, error) {
 			middleware.Validate,
 		),
 	)
-	grpcService := NewGrpcService(domainService, reservationService)
+	grpcService := NewGrpcService(productService, reservationService)
 
 	pb.RegisterProductsServer(grpcServer, grpcService)
 
@@ -125,18 +151,24 @@ func NewApp(cfg *config.Config) (*App, error) {
 	}
 
 	return &App{
-		grpcServer: grpcServer,
-		httpServer: httpServer,
-		cfg:        cfg,
-		job:        expiryJob,
-		producer:   producer,
+		grpcServer:             grpcServer,
+		httpServer:             httpServer,
+		cfg:                    cfg,
+		reservationExpiryJob:   reservationExpiryJob,
+		productEventsOutboxJob: productEventsOutboxJob,
+		producer:               producer,
 	}, nil
 }
 
 func (a *App) Run(ctx context.Context) error {
 	go func() {
 		slog.Info("starting reservation expiry job")
-		a.job.Run(ctx)
+		a.reservationExpiryJob.Run(ctx)
+	}()
+
+	go func() {
+		slog.Info("starting product events outbox job")
+		a.productEventsOutboxJob.Run(ctx)
 	}()
 
 	lis, err := net.Listen("tcp", ":"+a.cfg.GrpcServer.Port)

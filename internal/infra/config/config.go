@@ -17,13 +17,6 @@ type Config struct {
 		Port string `yaml:"port"`
 	} `yaml:"grpc-server"`
 
-	Products struct {
-		Host   string `yaml:"host"`
-		Port   string `yaml:"port"`
-		Token  string `yaml:"token"`
-		Schema string `yaml:"schema"`
-	} `yaml:"products"`
-
 	Database struct {
 		User     string `yaml:"user"`
 		Password string `yaml:"password"`
@@ -43,14 +36,15 @@ type Config struct {
 	} `yaml:"logging"`
 
 	Kafka struct {
-		Brokers                 []string `yaml:"brokers"`
-		ReservationExpiredTopic string   `yaml:"reservation-expired-topic"`
+		Brokers            []string `yaml:"brokers"`
+		ProductEventsTopic string   `yaml:"product-events-topic"`
+		WriteTimeout       string   `yaml:"write-timeout"`
 	} `yaml:"kafka"`
 
-	Reservation struct {
-		TTL         string `yaml:"ttl"`
-		JobInterval string `yaml:"job-interval"`
-	} `yaml:"reservation"`
+	Jobs struct {
+		ReservationExpiry   ReservationExpiryConfig   `yaml:"reservation-expiry"`
+		ProductEventsOutbox ProductEventsOutboxConfig `yaml:"product-events-outbox"`
+	} `yaml:"jobs"`
 }
 
 func LoadConfig(filename string) (*Config, error) {
@@ -62,9 +56,22 @@ func LoadConfig(filename string) (*Config, error) {
 	defer f.Close()
 
 	config := &Config{}
-	if err := yaml.NewDecoder(f).Decode(config); err != nil {
+	if err = yaml.NewDecoder(f).Decode(config); err != nil {
 		return nil, err
 	}
 
 	return config, nil
+}
+
+type ReservationExpiryConfig struct {
+	Enabled     bool   `yaml:"enabled"`
+	TTL         string `yaml:"ttl"`
+	JobInterval string `yaml:"job-interval"`
+}
+
+type ProductEventsOutboxConfig struct {
+	Enabled     bool   `yaml:"enabled"`
+	JobInterval string `yaml:"job-interval"`
+	BatchSize   int    `yaml:"batch-size"`
+	MaxRetries  int    `yaml:"max-retries"`
 }
