@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/errors"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/services/product_events_outbox"
 )
 
 type ReserveItem struct {
@@ -30,6 +31,9 @@ func (s *Service) Reserve(ctx context.Context, reserveItems []ReserveItem) (map[
 		productsMap[product.Sku] = product
 	}
 
+	oldState := getProductMapSnapshot(productsMap)
+	recordBuilder := product_events_outbox.NewRecordBuilder(oldState)
+
 	for _, reserveItem := range reserveItems {
 		//Проверяем наличие продукта
 		if _, ok := productsMap[reserveItem.Sku]; !ok {
@@ -51,6 +55,12 @@ func (s *Service) Reserve(ctx context.Context, reserveItems []ReserveItem) (map[
 		product.ReservedCount += reserveItem.Delta
 	}
 
+	newState := getProductMapSnapshot(productsMap)
+	outboxRecords, err := recordBuilder.BuildRecords(newState)
+	if err != nil {
+		return nil, fmt.Errorf("ReservationService.Reserve: %w", err)
+	}
+
 	reservationIds := make(map[uint64]int64, len(reserveItems))
 
 	err = s.db.InTransaction(ctx, func(tx pgx.Tx) error {
@@ -61,12 +71,20 @@ func (s *Service) Reserve(ctx context.Context, reserveItems []ReserveItem) (map[
 			return fmt.Errorf("Reserve: %w", err)
 		}
 
+		//TODO: сделать батчевую вставку
 		for _, item := range reserveItems {
 			reservation, err := reservationsTxRepo.Insert(ctx, item.Sku, item.Delta)
 			if err != nil {
 				return fmt.Errorf("Reserve: %w", err)
 			}
 			reservationIds[item.Sku] = reservation.Id
+		}
+
+		//TODO: сделать батчевую вставку
+		for _, outboxRecord := range outboxRecords {
+			if err = s.db.ProductEventsOutboxRepo().WithTx(tx).Create(ctx, outboxRecord); err != nil {
+				return fmt.Errorf("Reserve: save outbox_record: %w", err)
+			}
 		}
 
 		return nil

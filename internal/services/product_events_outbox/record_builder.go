@@ -67,6 +67,6 @@ func toSnapshot(p models.Product) ProductSnapshot {
 		Sku:   p.Sku,
 		Name:  p.Name,
 		Price: p.Price,
-		Count: p.Count,
+		Count: p.Count - p.ReservedCount,
 	}
 }
