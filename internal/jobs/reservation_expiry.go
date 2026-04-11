@@ -44,6 +44,7 @@ func NewReservationExpiryJob(
 func (j *ReservationExpiryJob) Run(ctx context.Context) {
 	if !j.enabled {
 		slog.InfoContext(ctx, "ReservationExpiryJob disabled, shutting down")
+		return
 	}
 
 	ticker := time.NewTicker(j.interval)

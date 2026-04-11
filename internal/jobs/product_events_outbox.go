@@ -20,13 +20,6 @@ type ProductEventsOutboxReadRepository interface {
 	WithTx(tx pgx.Tx) services.ProductEventsOutboxTxRepository
 }
 
-type ProductEventsOutboxWriteRepository interface {
-	Create(ctx context.Context, record models.ProductEventOutboxRecordNew) error
-	DeleteBatch(ctx context.Context, recordIds []uuid.UUID) error
-	IncrementRetry(ctx context.Context, recordId uuid.UUID) error
-	MarkDeadLetter(ctx context.Context, recordId uuid.UUID, reason string) error
-}
-
 type DBManager interface {
 	ProductEventsOutboxRepo() services.ProductEventsOutboxRepository
 	InTransaction(ctx context.Context, fn func(tx pgx.Tx) error) error
@@ -66,6 +59,7 @@ func NewProductEventsOutboxJob(
 func (j *ProductEventsOutboxJob) Run(ctx context.Context) {
 	if !j.enabled {
 		slog.InfoContext(ctx, "ProductEventsOutboxJob disabled, shutting down")
+		return
 	}
 
 	ticker := time.NewTicker(j.interval)
@@ -129,7 +123,7 @@ func (j *ProductEventsOutboxJob) tick(ctx context.Context) error {
 		ctx,
 		processBatchResult.SuccessRecords)
 	if err != nil {
-		slog.ErrorContext(ctx, "IncrementRetryBatch failed with error", "err", err)
+		slog.ErrorContext(ctx, "DeleteBatch failed with error", "err", err)
 	}
 
 	return nil
