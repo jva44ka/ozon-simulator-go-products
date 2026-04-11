@@ -108,7 +108,7 @@ func (j *ProductEventsOutboxJob) tick(ctx context.Context) error {
 				ctx,
 				failedRecordId)
 			if err != nil {
-				slog.ErrorContext(ctx, "IncrementRetryBatch failed with error", "err", err)
+				slog.ErrorContext(ctx, "IncrementRetry failed with error", "err", err)
 			}
 		}
 	}

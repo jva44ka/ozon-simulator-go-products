@@ -29,7 +29,7 @@ func (s *Service) IncreaseCount(ctx context.Context, products []UpdateCount) err
 	newState := getProductMapSnapshot(existingProductsMap)
 	outboxRecords, err := recordBuilder.BuildRecords(newState)
 	if err != nil {
-		return fmt.Errorf("ProductService.Confirm: %w", err)
+		return fmt.Errorf("ProductService.IncreaseCount: %w", err)
 	}
 
 	return s.db.InTransaction(ctx, func(tx pgx.Tx) error {
