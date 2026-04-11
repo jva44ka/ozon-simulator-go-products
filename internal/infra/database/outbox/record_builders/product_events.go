@@ -1,25 +1,13 @@
-package product_events_outbox
+package record_builders
 
 import (
 	"encoding/json"
 	"fmt"
 	"strconv"
 
+	kafkaContracts "github.com/jva44ka/ozon-simulator-go-products/api_internal/kafka"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
 )
-
-type ProductSnapshot struct {
-	Sku   uint64  `json:"sku"`
-	Name  string  `json:"name"`
-	Price float64 `json:"price"`
-	Count uint32  `json:"count"`
-}
-
-// TODO: вынести контракт
-type ProductEventData struct {
-	Old ProductSnapshot `json:"old"`
-	New ProductSnapshot `json:"new"`
-}
 
 type RecordBuilder struct {
 	oldStates map[uint64]models.Product
@@ -45,7 +33,7 @@ func (s *RecordBuilder) BuildRecords(
 			return nil, fmt.Errorf("old state not found for sku: %d", sku)
 		}
 
-		data, err := json.Marshal(ProductEventData{
+		data, err := json.Marshal(kafkaContracts.ProductEventData{
 			Old: toSnapshot(oldState),
 			New: toSnapshot(newState),
 		})
@@ -62,8 +50,8 @@ func (s *RecordBuilder) BuildRecords(
 	return records, nil
 }
 
-func toSnapshot(p models.Product) ProductSnapshot {
-	return ProductSnapshot{
+func toSnapshot(p models.Product) kafkaContracts.Product {
+	return kafkaContracts.Product{
 		Sku:   p.Sku,
 		Name:  p.Name,
 		Price: p.Price,

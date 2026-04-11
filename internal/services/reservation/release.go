@@ -7,8 +7,8 @@ import (
 	"slices"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/database/outbox/record_builders"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/services/product_events_outbox"
 )
 
 func (s *Service) Release(ctx context.Context, ids []int64) error {
@@ -34,7 +34,7 @@ func (s *Service) Release(ctx context.Context, ids []int64) error {
 	}
 
 	oldState := getProductMapSnapshot(productMap)
-	recordBuilder := product_events_outbox.NewRecordBuilder(oldState)
+	recordBuilder := record_builders.NewRecordBuilder(oldState)
 
 	for _, product := range products {
 		productMap[product.Sku].ReservedCount -= reservationSumsBySku[product.Sku]

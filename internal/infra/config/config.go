@@ -38,6 +38,7 @@ type Config struct {
 	Kafka struct {
 		Brokers            []string `yaml:"brokers"`
 		ProductEventsTopic string   `yaml:"product-events-topic"`
+		WriteTimeout       string   `yaml:"write-timeout"`
 	} `yaml:"kafka"`
 
 	Jobs struct {

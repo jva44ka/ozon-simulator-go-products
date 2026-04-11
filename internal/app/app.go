@@ -28,12 +28,12 @@ import (
 )
 
 type App struct {
-	grpcServer *grpc.Server
-	httpServer *http.Server
-	cfg        *config.Config
-	reservationExpiryJob    *jobs.ReservationExpiryJob
-	productEventsOutboxJob  *jobs.ProductEventsOutboxJob
-	producer   *kafka.Producer
+	grpcServer             *grpc.Server
+	httpServer             *http.Server
+	cfg                    *config.Config
+	reservationExpiryJob   *jobs.ReservationExpiryJob
+	productEventsOutboxJob *jobs.ProductEventsOutboxJob
+	producer               *kafka.Producer
 }
 
 func NewApp(cfg *config.Config) (*App, error) {
@@ -65,9 +65,14 @@ func NewApp(cfg *config.Config) (*App, error) {
 		return nil, fmt.Errorf("parse outbox_record_builder.job-interval: %w", err)
 	}
 
+	kafkaWriteTimeout, err := time.ParseDuration(cfg.Kafka.WriteTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("parse kafka.write-timeout: %w", err)
+	}
+
 	dbMetrics := metrics.NewDbMetrics()
 	db := database.NewDBManager(pool, dbMetrics, dbMetrics)
-	producer := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.ProductEventsTopic)
+	producer := kafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.ProductEventsTopic, kafkaWriteTimeout)
 
 	productService := product.NewService(db)
 	reservationService := reservation.NewService(db)
@@ -146,12 +151,12 @@ func NewApp(cfg *config.Config) (*App, error) {
 	}
 
 	return &App{
-		grpcServer: grpcServer,
-		httpServer: httpServer,
+		grpcServer:             grpcServer,
+		httpServer:             httpServer,
 		cfg:                    cfg,
 		reservationExpiryJob:   reservationExpiryJob,
 		productEventsOutboxJob: productEventsOutboxJob,
-		producer:   producer,
+		producer:               producer,
 	}, nil
 }
 

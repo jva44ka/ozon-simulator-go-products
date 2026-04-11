@@ -4,65 +4,35 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 
-	"github.com/google/uuid"
+	kafkaContracts "github.com/jva44ka/ozon-simulator-go-products/api_internal/kafka"
 	segkafka "github.com/segmentio/kafka-go"
 )
-
-type ProductSnapshot struct {
-	Sku   uint64  `json:"sku"`
-	Name  string  `json:"name"`
-	Price float64 `json:"price"`
-	Count uint32  `json:"count"`
-}
-
-// TODO: вынести контракт
-type ProductChangedEvent struct {
-	RecordId uuid.UUID       `json:"recordId"`
-	Old      ProductSnapshot `json:"old"`
-	New      ProductSnapshot `json:"new"`
-}
 
 type Producer struct {
 	writer *segkafka.Writer
 }
 
-func NewProducer(brokers []string, topic string) *Producer {
+func NewProducer(brokers []string, topic string, writeTimeout time.Duration) *Producer {
 	return &Producer{
 		writer: &segkafka.Writer{
-			Addr:  segkafka.TCP(brokers...),
-			Topic: topic,
-			//TODO to config
-			WriteTimeout: 10 * time.Second,
+			Addr:         segkafka.TCP(brokers...),
+			Topic:        topic,
+			WriteTimeout: writeTimeout,
 		},
 	}
 }
 
-func (p *Producer) PublishProductChanged(ctx context.Context, old, new ProductSnapshot) error {
-	event := ProductChangedEvent{Old: old, New: new}
-
-	data, err := json.Marshal(event)
-	if err != nil {
-		return fmt.Errorf("Producer.PublishProductChanged: marshal: %w", err)
-	}
-
-	return p.writer.WriteMessages(ctx, segkafka.Message{
-		Key:   []byte(strconv.FormatUint(new.Sku, 10)),
-		Value: data,
-	})
-}
-
-func (p *Producer) PublishProductChangedBatch(ctx context.Context, events []ProductChangedEvent) error {
+func (p *Producer) PublishProductChangedBatch(ctx context.Context, events []kafkaContracts.ProductEventMessage) error {
 	messages := make([]segkafka.Message, 0, len(events))
-	for _, event := range events {
-		data, err := json.Marshal(event)
+	for _, message := range events {
+		data, err := json.Marshal(message.Body)
 		if err != nil {
-			return fmt.Errorf("Producer.PublishProductChangedBatch: marshal sku=%d: %w", event.New.Sku, err)
+			return fmt.Errorf("Producer.PublishProductChangedBatch: marshal sku=%d: %w", message.Key, err)
 		}
 		messages = append(messages, segkafka.Message{
-			Key:   []byte(strconv.FormatUint(event.New.Sku, 10)),
+			Key:   []byte(message.Key),
 			Value: data,
 		})
 	}

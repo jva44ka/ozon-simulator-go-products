@@ -6,8 +6,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/errors"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/database/outbox/record_builders"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/services/product_events_outbox"
 )
 
 type ReserveItem struct {
@@ -32,7 +32,7 @@ func (s *Service) Reserve(ctx context.Context, reserveItems []ReserveItem) (map[
 	}
 
 	oldState := getProductMapSnapshot(productsMap)
-	recordBuilder := product_events_outbox.NewRecordBuilder(oldState)
+	recordBuilder := record_builders.NewRecordBuilder(oldState)
 
 	for _, reserveItem := range reserveItems {
 		//Проверяем наличие продукта

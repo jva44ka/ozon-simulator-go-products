@@ -25,6 +25,7 @@ kafka:
   brokers:
     - localhost:9092
   product-events-topic: product.events
+  write-timeout: 5s
 
 jobs:
   reservation-expiry:

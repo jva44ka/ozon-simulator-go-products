@@ -9,10 +9,10 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
+	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/database/outbox/record_builders"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/infra/kafka"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/models"
 	"github.com/jva44ka/ozon-simulator-go-products/internal/services"
-	"github.com/jva44ka/ozon-simulator-go-products/internal/services/product_events_outbox"
 )
 
 // TODO: Вынести местную бизнес-логику в сервис, чтобы не было этой зависимости от репозитория
@@ -150,7 +150,7 @@ func (j *ProductEventsOutboxJob) processBatch(ctx context.Context, records []mod
 
 	for _, outboxRecord := range records {
 		//TODO: вынести маппинг
-		var outboxRecordData product_events_outbox.ProductEventData
+		var outboxRecordData record_builders.ProductEventData
 		if err := json.Unmarshal(outboxRecord.Data, &outboxRecordData); err != nil {
 			failedRecordReasons[outboxRecord.RecordId] = err.Error()
 			continue
