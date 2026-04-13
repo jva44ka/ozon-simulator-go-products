@@ -96,7 +96,6 @@ func (j *ProductEventsOutboxJob) tick(ctx context.Context) error {
 		return nil
 	}
 
-	// Замеряем возраст записей
 	for _, record := range outboxRecords {
 		j.metrics.ReportRecordAge(time.Since(record.CreatedAt))
 	}
@@ -142,16 +141,9 @@ func (j *ProductEventsOutboxJob) tick(ctx context.Context) error {
 		slog.ErrorContext(ctx, "DeleteBatch failed with error", "err", err)
 	}
 
-	// Репортим метрики по результатам
-	if len(processBatchResult.SuccessRecords) > 0 {
-		j.metrics.ReportProcessed("success", len(processBatchResult.SuccessRecords))
-	}
-	if failedCount > 0 {
-		j.metrics.ReportProcessed("failed", failedCount)
-	}
-	if deadLetterCount > 0 {
-		j.metrics.ReportProcessed("dead_letter", deadLetterCount)
-	}
+	j.metrics.ReportProcessed("success", len(processBatchResult.SuccessRecords))
+	j.metrics.ReportProcessed("failed", failedCount)
+	j.metrics.ReportProcessed("dead_letter", deadLetterCount)
 
 	return nil
 }
