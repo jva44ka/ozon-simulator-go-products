@@ -13,11 +13,11 @@ type OutboxMonitorMetrics struct {
 func NewOutboxMonitorMetrics() *OutboxMonitorMetrics {
 	return &OutboxMonitorMetrics{
 		recordsPending: promauto.NewGauge(prometheus.GaugeOpts{
-			Name: "outbox_records_pending",
+			Name: "products_outbox_records_pending_count",
 			Help: "Current number of pending outbox records (not dead lettered)",
 		}),
 		recordsDeadLetter: promauto.NewGauge(prometheus.GaugeOpts{
-			Name: "outbox_records_dead_letter",
+			Name: "products_outbox_records_dead_letter_count",
 			Help: "Current number of dead letter outbox records",
 		}),
 	}

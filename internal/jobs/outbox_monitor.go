@@ -7,8 +7,7 @@ import (
 )
 
 type OutboxMonitorRepository interface {
-	CountPending(ctx context.Context) (int64, error)
-	CountDeadLetters(ctx context.Context) (int64, error)
+	GetCount(ctx context.Context, isDeadLetter bool) (int64, error)
 }
 
 type OutboxMonitorMetrics interface {
@@ -51,27 +50,23 @@ func (j *OutboxMonitorJob) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			if err := j.tick(ctx); err != nil {
-				slog.ErrorContext(ctx, "outbox monitor job failed", "err", err)
-			}
+			j.tick(ctx)
 		}
 	}
 }
 
-func (j *OutboxMonitorJob) tick(ctx context.Context) error {
-	pending, err := j.repo.CountPending(ctx)
+func (j *OutboxMonitorJob) tick(ctx context.Context) {
+	pending, err := j.repo.GetCount(ctx, false)
 	if err != nil {
 		slog.ErrorContext(ctx, "OutboxMonitorJob: CountPending failed", "err", err)
 	} else {
 		j.metrics.SetPending(pending)
 	}
 
-	deadLetters, err := j.repo.CountDeadLetters(ctx)
+	deadLetters, err := j.repo.GetCount(ctx, true)
 	if err != nil {
 		slog.ErrorContext(ctx, "OutboxMonitorJob: CountDeadLetters failed", "err", err)
 	} else {
 		j.metrics.SetDeadLetter(deadLetters)
 	}
-
-	return nil
 }

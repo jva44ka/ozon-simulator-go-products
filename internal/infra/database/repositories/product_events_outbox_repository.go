@@ -53,22 +53,15 @@ LIMIT $1;`
 	return records, rows.Err()
 }
 
-func (r *ProductEventsOutboxPgxRepository) CountPending(ctx context.Context) (int64, error) {
-	const query = `SELECT COUNT(*) FROM outbox.product_events WHERE is_dead_letter = FALSE;`
+func (r *ProductEventsOutboxPgxRepository) GetCount(ctx context.Context, isDeadLetter bool) (int64, error) {
+	const query = `
+SELECT COUNT(*) 
+FROM outbox.product_events 
+WHERE is_dead_letter = $1;`
 
 	var count int64
-	if err := r.pool.QueryRow(ctx, query).Scan(&count); err != nil {
+	if err := r.pool.QueryRow(ctx, query, isDeadLetter).Scan(&count); err != nil {
 		return 0, fmt.Errorf("OutboxRepository.CountPending: %w", err)
-	}
-	return count, nil
-}
-
-func (r *ProductEventsOutboxPgxRepository) CountDeadLetters(ctx context.Context) (int64, error) {
-	const query = `SELECT COUNT(*) FROM outbox.product_events WHERE is_dead_letter = TRUE;`
-
-	var count int64
-	if err := r.pool.QueryRow(ctx, query).Scan(&count); err != nil {
-		return 0, fmt.Errorf("OutboxRepository.CountDeadLetters: %w", err)
 	}
 	return count, nil
 }

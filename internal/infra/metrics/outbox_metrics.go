@@ -17,21 +17,21 @@ type OutboxMetrics struct {
 func NewOutboxMetrics() *OutboxMetrics {
 	return &OutboxMetrics{
 		recordsProcessed: promauto.NewCounterVec(prometheus.CounterOpts{
-			Name: "outbox_records_processed_total",
+			Name: "products_outbox_records_processed_total",
 			Help: "Total number of outbox records processed",
 		}, []string{"status"}),
 		tickDuration: promauto.NewHistogram(prometheus.HistogramOpts{
-			Name:    "outbox_tick_duration_seconds",
+			Name:    "products_outbox_tick_duration_seconds",
 			Help:    "Duration of outbox job tick in seconds",
 			Buckets: prometheus.DefBuckets,
 		}),
 		kafkaPublishDuration: promauto.NewHistogram(prometheus.HistogramOpts{
-			Name:    "outbox_kafka_publish_duration_seconds",
+			Name:    "products_outbox_kafka_publish_duration_seconds",
 			Help:    "Duration of Kafka batch publish in seconds",
 			Buckets: prometheus.DefBuckets,
 		}),
 		recordAge: promauto.NewHistogram(prometheus.HistogramOpts{
-			Name:    "outbox_record_age_seconds",
+			Name:    "products_outbox_record_age_seconds",
 			Help:    "Age of outbox record at processing time in seconds",
 			Buckets: []float64{0.1, 0.5, 1, 2, 5, 10, 30, 60, 120, 300},
 		}),
