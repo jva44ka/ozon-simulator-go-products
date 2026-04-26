@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	errors2 "github.com/jva44ka/marketplace-simulator-product/internal/errors"
+	appErrors "github.com/jva44ka/marketplace-simulator-product/internal/errors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -26,10 +26,12 @@ func StatusCode(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler g
 
 func grpcStatusFromErr(err error) error {
 	switch {
-	case errors.Is(err, &errors2.ProductNotFoundError{}):
+	case errors.Is(err, &appErrors.ProductNotFoundError{}):
 		return status.Errorf(codes.NotFound, err.Error())
-	case errors.Is(err, &errors2.InsufficientProductError{}):
+	case errors.Is(err, &appErrors.InsufficientProductError{}):
 		return status.Errorf(codes.FailedPrecondition, err.Error())
+	case errors.Is(err, &appErrors.OptimisticLockError{}):
+		return status.Errorf(codes.Aborted, err.Error())
 	default:
 		return status.Errorf(codes.Internal, err.Error())
 	}

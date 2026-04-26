@@ -6,6 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	appErrors "github.com/jva44ka/marketplace-simulator-product/internal/errors"
 	"github.com/jva44ka/marketplace-simulator-product/internal/models"
 	"github.com/jva44ka/marketplace-simulator-product/internal/services"
 )
@@ -115,7 +116,7 @@ WHERE sku = $1 AND xmin = $2;`
 	if affected != int64(len(products)) {
 		r.metrics.ReportRequest("Update", "error")
 		r.metrics.ReportOptimisticLockFailure()
-		return fmt.Errorf("ProductRepository.Update: optimistic lock failed, retry required")
+		return fmt.Errorf("ProductRepository.Update: %w", appErrors.NewOptimisticLockError())
 	}
 
 	r.metrics.ReportRequest("Update", "success")
